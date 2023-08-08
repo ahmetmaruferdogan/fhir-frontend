@@ -134,8 +134,31 @@
 // export default AddPatientModal;
 
 import React, { useRef, useState } from 'react';
-import { Button, Modal, TextField } from '@mui/material';
+import { Button, ButtonGroup, Modal, TextField } from '@mui/material';
 import { toast } from 'react-toastify';
+import { Box } from '@mui/system';
+
+const styles = {
+  modal: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    padding: '2rem',
+    borderRadius: '4px',
+    outline: 'none'
+  },
+  textField: {
+    marginBottom: '1rem'
+  },
+  buttonContainer: {
+    display: 'flex',
+    justifyContent: 'flex-end',
+    marginTop: '1rem'
+  }
+};
 
 const AddPatientModal = ({ open, onClose, onSave, id }) => {
   const initialPatientData = {
@@ -194,11 +217,12 @@ const AddPatientModal = ({ open, onClose, onSave, id }) => {
   };
 
   return (
-    <Modal open={open} onClose={() => handleClose(id)}>
-      <div>
+    <Modal open={open} onClose={() => handleClose(id)} style={styles.modal}>
+      <Box style={styles.modalContent}>
         <h2>Create Patient</h2>
         <form>
           <TextField
+            style={styles.textField}
             label="Name"
             inputRef={(el) => (textFieldRefs.nameRef = el)}
             value={patientData.name}
@@ -210,6 +234,7 @@ const AddPatientModal = ({ open, onClose, onSave, id }) => {
             }
           />
           <TextField
+            style={styles.textField}
             label="Gender"
             inputRef={(el) => (textFieldRefs.genderRef = el)}
             value={patientData.gender}
@@ -221,6 +246,7 @@ const AddPatientModal = ({ open, onClose, onSave, id }) => {
             }
           />
           <TextField
+            style={styles.textField}
             label="Birth Date"
             inputRef={(el) => (textFieldRefs.birthDateRef = el)}
             value={patientData.birthDate}
@@ -232,6 +258,7 @@ const AddPatientModal = ({ open, onClose, onSave, id }) => {
             }
           />
           <TextField
+            style={styles.textField}
             label="Telecom"
             inputRef={(el) => (textFieldRefs.telecomRef = el)}
             value={patientData.telecom}
@@ -244,14 +271,16 @@ const AddPatientModal = ({ open, onClose, onSave, id }) => {
           />
         </form>
         <div className="modal-actions">
-          <Button variant="outlined" onClick={() => handleClose(id)}>
-            Cancel
-          </Button>
-          <Button variant="contained" onClick={handleSave}>
-            Save
-          </Button>
+          <ButtonGroup style={styles.buttonContainer}>
+            <Button variant="outlined" onClick={() => handleClose(id)}>
+              Cancel
+            </Button>
+            <Button variant="contained" onClick={handleSave}>
+              {id ? 'Update' : 'Create'}
+            </Button>
+          </ButtonGroup>
         </div>
-      </div>
+      </Box>
     </Modal>
   );
 };

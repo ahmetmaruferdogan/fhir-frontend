@@ -33,7 +33,7 @@ const PatientList = () => {
     dispatch(createPatient(params0));
   };
 
-  const [editedPatient, setEditedPatient] = useState(false);
+  const [editedPatient, setEditedPatient] = useState({});
 
   const deletePatient = (patients) => {
     if (!patients) {
@@ -47,90 +47,92 @@ const PatientList = () => {
     }
   };
 
-  const [idString, setIdString] = useState('');
-  const [nameString, setNameString] = useState('');
-  const [genderString, setGenderString] = useState('');
-  const [birthdateString, setbirthdateString] = useState('');
-  const [telecomString, setTelecomString] = useState('');
+  // const [idString, setIdString] = useState('');
+  // const [nameString, setNameString] = useState('');
+  // const [genderString, setGenderString] = useState('');
+  // const [birthdateString, setbirthdateString] = useState('');
+  // const [telecomString, setTelecomString] = useState('');
   const textInputRefs = useRef({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  const isNumeric = (str) => {
-    return /^\d+$/.test(str);
-  };
+  // const isNumeric = (str) => {
+  //   return /^\d+$/.test(str);
+  // };
 
-  const hasDatePattern = (str) => {
-    const pattern = /\d{4}-\d{2}-\d{2}/;
+  // const hasDatePattern = (str) => {
+  //   const pattern = /\d{4}-\d{2}-\d{2}/;
 
-    return pattern.test(str);
-  };
+  //   return pattern.test(str);
+  // };
 
-  const valueChangeHandler = (id, value) => {
-    if (!value) {
-      return;
-    }
+  // const valueChangeHandler = (id, value) => {
+  //   if (!value) {
+  //     return;
+  //   }
 
-    if (id.match(/^id$/)) {
-      setIdString(value);
-      return;
-    }
-    if (id.match(/^name$/)) {
-      setNameString(value);
-      return;
-    }
-    if (id.match(/^gender$/)) {
-      setGenderString(value);
-      return;
-    }
-    if (id.match(/^birthdate$/)) {
-      setbirthdateString(value);
-      return;
-    }
-    if (id.match(/^telecom$/)) {
-      setTelecomString(value);
-      return;
-    }
-  };
+  //   if (id.match(/^id$/)) {
+  //     setIdString(value);
+  //     return;
+  //   }
+  //   if (id.match(/^name$/)) {
+  //     setNameString(value);
+  //     return;
+  //   }
+  //   if (id.match(/^gender$/)) {
+  //     setGenderString(value);
+  //     return;
+  //   }
+  //   if (id.match(/^birthdate$/)) {
+  //     setbirthdateString(value);
+  //     return;
+  //   }
+  //   if (id.match(/^telecom$/)) {
+  //     setTelecomString(value);
+  //     return;
+  //   }
+  // };
 
-  const handleEnterPress = () => {
-    var searchParameters = {};
-    if (idString) {
-      if (!isNumeric(idString)) {
-        toast.error('id field must be a positive integer!');
-        return;
-      } else {
-        searchParameters._id = idString;
-      }
-    }
-    if (nameString) {
-      searchParameters._content = nameString;
-    }
-    if (genderString) {
-      searchParameters.gender = genderString;
-    }
-    if (birthdateString) {
-      if (!hasDatePattern(birthdateString)) {
-        toast.error(
-          "for birthdate a pattern of 'yyyy-mm-dd' must be used! (write months and dates with 0 at the beginning if it is 1 digit)"
-        );
-        return;
-      } else {
-        searchParameters.birthdate = birthdateString;
-      }
-    }
-    if (telecomString) {
-      searchParameters.telecom = [telecomString];
-    }
+  const handleEnterPress = (text) => {
+    // if (idString) {
+    //   if (!isNumeric(idString)) {
+    //     toast.error('id field must be a positive integer!');
+    //     return;
+    //   } else {
+    //     searchParameters._id = idString;
+    //   }
+    // }
+    // if (nameString) {
+    //   searchParameters._content = nameString;
+    // }
+    // if (genderString) {
+    //   searchParameters.gender = genderString;
+    // }
+    // if (birthdateString) {
+    //   if (!hasDatePattern(birthdateString)) {
+    //     toast.error(
+    //       "for birthdate a pattern of 'yyyy-mm-dd' must be used! (write months and dates with 0 at the beginning if it is 1 digit)"
+    //     );
+    //     return;
+    //   } else {
+    //     searchParameters.birthdate = birthdateString;
+    //   }
+    // }
+    // if (telecomString) {
+    //   searchParameters.telecom = [telecomString];
+    // }
+
+    var searchParameters = { _content: text };
     executeSearch({
       bundle: {},
       searchParams: searchParameters
     });
-    setIdString('');
-    setNameString('');
-    setGenderString('');
-    setbirthdateString('');
-    setTelecomString('');
+    // setIdString('');
+    // setNameString('');
+    // setGenderString('');
+    // setbirthdateString('');
+    // setTelecomString('');
+    setSearchText('');
     setCurrentPage(0);
     Object.values(textInputRefs.current).forEach((ref) => (ref.value = ''));
   };
@@ -148,6 +150,7 @@ const PatientList = () => {
   };
 
   const [currentPage, setCurrentPage] = useState(0);
+  const [searchText, setSearchText] = useState('');
 
   const handlePageChange = (event, newPage) => {
     if (loading) {
@@ -167,12 +170,13 @@ const PatientList = () => {
   };
 
   const handleDeleteDialogConfirm = (patients) => {
-    handleDeleteDialogClose();
     deletePatient(patients);
+    handleDeleteDialogClose();
   };
 
   const handleDeleteDialogClose = () => {
     setDialogOpen(false);
+    setEditedPatient({});
   };
 
   const columns = [
@@ -205,55 +209,53 @@ const PatientList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <IconButton onClick={handleOpenAddPatientModal}>
-        <AddIcon fontSize="small"></AddIcon>
-      </IconButton>
       <AddPatientModal open={isModalOpen} onClose={handleCloseAddPatientModal} onSave={handleSavePatient} />
+      <TextField
+        id="search-field"
+        label="Search"
+        variant="outlined"
+        onChange={(event) => {
+          setSearchText(event.target.value);
+        }}
+        onKeyDown={(event) => {
+          console.log(event);
+          if (event.key === 'Enter') {
+            handleEnterPress(searchText);
+          }
+        }}
+      ></TextField>
       <TableContainer component={Paper}>
-        <TablePagination
-          component="div"
-          rowsPerPageOptions={[]}
-          count={bundle?.total || 0}
-          page={currentPage}
-          rowsPerPage={Number(bundle?.entry?.length) || 0}
-          disabled={loading}
-          onPageChange={(event, newPage) => {
-            if (!loading) {
-              handlePageChange(event, newPage);
-            }
-          }}
-        ></TablePagination>
         <Table aria-label="Patients">
           <TableHead>
             <TableRow>
-              {columns.map((column) => (
-                <TableCell key={column.id} align={column.align}>
-                  {column.label}
-                </TableCell>
-              ))}
+              {columns.map(
+                (column) =>
+                  column.id === 'buttons' ? (
+                    <TableCell key={column.id} align={column.align}>
+                      <IconButton onClick={handleOpenAddPatientModal}>
+                        <AddIcon fontSize="small"></AddIcon>
+                      </IconButton>
+                    </TableCell>
+                  ) : (
+                    <TableCell key={column.id} align={column.align}>
+                      {column.label}
+                    </TableCell>
+                  )
+                // {
+                //   if (column.id === 'buttons') {
+                //     return (
+
+                //     );
+                //   } else {
+                //     return (
+
+                //     );
+                //   }
+                // }
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
-            <TableRow>
-              {columns.map((column) => {
-                column.search ? (
-                  <TextField
-                    id={column.id + '_search_textfield'}
-                    inputRef={(el) => (textInputRefs.current[column.id] = el)}
-                    label={column.id}
-                    variant="standard"
-                    onChange={(event) => valueChangeHandler(column.id, event?.target?.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        handleEnterPress();
-                      }
-                    }}
-                  />
-                ) : (
-                  <></>
-                );
-              })}
-            </TableRow>
             {bundle?.entry?.map((patient) => (
               <TableRow key={patient.resource.id}>
                 <TableCell>{patient.resource.id || '-'}</TableCell>
@@ -277,6 +279,19 @@ const PatientList = () => {
             ))}
           </TableBody>
         </Table>
+        <TablePagination
+          component="div"
+          rowsPerPageOptions={[]}
+          count={bundle?.total || 0}
+          page={currentPage}
+          rowsPerPage={Number(bundle?.entry?.length) || 0}
+          disabled={loading}
+          onPageChange={(event, newPage) => {
+            if (!loading) {
+              handlePageChange(event, newPage);
+            }
+          }}
+        ></TablePagination>
       </TableContainer>
     </div>
   );
