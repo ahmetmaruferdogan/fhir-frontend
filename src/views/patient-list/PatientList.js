@@ -1,6 +1,6 @@
-import { fetchPatients, createPatient, deletePatientWithId } from '../../store/patientSlicer';
+import { fetchPatients, deletePatientWithId, fetchGenders } from '../../store/patientSlicer';
 import { React, useEffect, useRef, useState } from 'react';
-import { parseName } from '../../utils/patients-utils';
+import { parseName, prevPageExists, nextPageExists } from '../../utils/patients-utils';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -10,18 +10,25 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Button, IconButton, TablePagination } from '@mui/material';
+import { Box, Button, IconButton, TablePagination } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useDispatch, useSelector } from 'react-redux';
 import AddPatientModal from './AddPatientModal';
 import { toast } from 'react-toastify';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
+import SkeletonPatientList from './skeleton/SkeletonPatientList';
+import EditIcon from '@mui/icons-material/Edit';
+import SearchIcon from '@mui/icons-material/Search';
 
 const PatientList = () => {
   const dispatch = useDispatch();
-  const { bundle, loading } = useSelector((state) => state.patients);
+  const { bundle, loading, genders } = useSelector((state) => state.patients);
   useEffect(() => {
+    if (genders.length <= 0) {
+      dispatch(fetchGenders());
+    }
     executeSearch();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
   const executeSearch = (params0) => {
@@ -29,11 +36,7 @@ const PatientList = () => {
     dispatch(fetchPatients(params0));
   };
 
-  const addPatient = (params0) => {
-    dispatch(createPatient(params0));
-  };
-
-  const [editedPatient, setEditedPatient] = useState({});
+  const [editedPatient, setEditedPatient] = useState(undefined);
 
   const deletePatient = (patients) => {
     if (!patients) {
@@ -47,91 +50,16 @@ const PatientList = () => {
     }
   };
 
-  // const [idString, setIdString] = useState('');
-  // const [nameString, setNameString] = useState('');
-  // const [genderString, setGenderString] = useState('');
-  // const [birthdateString, setbirthdateString] = useState('');
-  // const [telecomString, setTelecomString] = useState('');
   const textInputRefs = useRef({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
-  // const isNumeric = (str) => {
-  //   return /^\d+$/.test(str);
-  // };
-
-  // const hasDatePattern = (str) => {
-  //   const pattern = /\d{4}-\d{2}-\d{2}/;
-
-  //   return pattern.test(str);
-  // };
-
-  // const valueChangeHandler = (id, value) => {
-  //   if (!value) {
-  //     return;
-  //   }
-
-  //   if (id.match(/^id$/)) {
-  //     setIdString(value);
-  //     return;
-  //   }
-  //   if (id.match(/^name$/)) {
-  //     setNameString(value);
-  //     return;
-  //   }
-  //   if (id.match(/^gender$/)) {
-  //     setGenderString(value);
-  //     return;
-  //   }
-  //   if (id.match(/^birthdate$/)) {
-  //     setbirthdateString(value);
-  //     return;
-  //   }
-  //   if (id.match(/^telecom$/)) {
-  //     setTelecomString(value);
-  //     return;
-  //   }
-  // };
-
-  const handleEnterPress = (text) => {
-    // if (idString) {
-    //   if (!isNumeric(idString)) {
-    //     toast.error('id field must be a positive integer!');
-    //     return;
-    //   } else {
-    //     searchParameters._id = idString;
-    //   }
-    // }
-    // if (nameString) {
-    //   searchParameters._content = nameString;
-    // }
-    // if (genderString) {
-    //   searchParameters.gender = genderString;
-    // }
-    // if (birthdateString) {
-    //   if (!hasDatePattern(birthdateString)) {
-    //     toast.error(
-    //       "for birthdate a pattern of 'yyyy-mm-dd' must be used! (write months and dates with 0 at the beginning if it is 1 digit)"
-    //     );
-    //     return;
-    //   } else {
-    //     searchParameters.birthdate = birthdateString;
-    //   }
-    // }
-    // if (telecomString) {
-    //   searchParameters.telecom = [telecomString];
-    // }
-
-    var searchParameters = { _content: text };
+  const handleEnterPress = () => {
+    var searchParameters = { _content: searchText };
     executeSearch({
       bundle: {},
       searchParams: searchParameters
     });
-    // setIdString('');
-    // setNameString('');
-    // setGenderString('');
-    // setbirthdateString('');
-    // setTelecomString('');
     setSearchText('');
     setCurrentPage(0);
     Object.values(textInputRefs.current).forEach((ref) => (ref.value = ''));
@@ -143,14 +71,39 @@ const PatientList = () => {
 
   const handleCloseAddPatientModal = () => {
     setIsModalOpen(false);
-  };
-
-  const handleSavePatient = (data) => {
-    addPatient(data);
+    setEditedPatient(undefined);
   };
 
   const [currentPage, setCurrentPage] = useState(0);
   const [searchText, setSearchText] = useState('');
+
+  const fetchPrevPage = (oldBundle) => {
+    if (!prevPageExists(oldBundle)) {
+      toast.error('There is no previous page!');
+      return;
+    }
+    dispatch(
+      fetchPatients({
+        searchType: 'prev',
+        bundle: oldBundle,
+        searchParams: {}
+      })
+    );
+  };
+
+  const fetchNextPage = (oldBundle) => {
+    if (!nextPageExists(oldBundle)) {
+      toast.error('There is no next page!');
+      return;
+    }
+    dispatch(
+      fetchPatients({
+        searchType: 'next',
+        bundle: oldBundle,
+        searchParams: {}
+      })
+    );
+  };
 
   const handlePageChange = (event, newPage) => {
     if (loading) {
@@ -176,27 +129,30 @@ const PatientList = () => {
 
   const handleDeleteDialogClose = () => {
     setDialogOpen(false);
-    setEditedPatient({});
+    setEditedPatient(undefined);
   };
 
   const columns = [
-    { id: 'id', label: 'id', minWidth: 100, search: true },
-    { id: 'name', label: 'Full Name', minWidth: 200, search: true },
-    { id: 'gender', label: 'Gender', minWidth: 100, search: true },
-    { id: 'birthdate', label: 'Birth Date', minWidth: 150, search: true },
-    { id: 'telecom', label: 'Telecom', minWidth: 150, search: true },
+    { id: 'id', label: 'id', minWidth: 100, title: true },
+    { id: 'name', label: 'Full Name', minWidth: 200, title: true },
+    { id: 'gender', label: 'Gender', minWidth: 100, title: true },
+    { id: 'birthdate', label: 'Birth Date', minWidth: 150, title: true },
+    { id: 'telecom', label: 'Telecom', minWidth: 150, title: true },
     { id: 'buttons', label: '', minWidth: 150 }
   ];
 
-  return (
+  return loading ? (
+    <SkeletonPatientList></SkeletonPatientList>
+  ) : (
     <div>
       <Dialog
+        key="delete-dialog"
         open={dialogOpen}
         onClose={handleDeleteDialogClose}
         aria-labelledby="alert-dialog-title"
         aria-describedby="alert-dialog-description"
       >
-        <DialogTitle id="alert-dialog-title">{"Use Google's location service?"}</DialogTitle>
+        <DialogTitle id="alert-dialog-title">{'Confirm delete patient?'}</DialogTitle>
         <DialogContent>
           <DialogContentText id="alert-dialog-description">
             Are you sure you want to delete the patient (id: {editedPatient?.resource?.id})?
@@ -209,49 +165,46 @@ const PatientList = () => {
           </Button>
         </DialogActions>
       </Dialog>
-      <AddPatientModal open={isModalOpen} onClose={handleCloseAddPatientModal} onSave={handleSavePatient} />
-      <TextField
-        id="search-field"
-        label="Search"
-        variant="outlined"
-        onChange={(event) => {
-          setSearchText(event.target.value);
-        }}
-        onKeyDown={(event) => {
-          console.log(event);
-          if (event.key === 'Enter') {
-            handleEnterPress(searchText);
-          }
-        }}
-      ></TextField>
+      <AddPatientModal
+        key="add-patient-modal"
+        open={isModalOpen}
+        onClose={handleCloseAddPatientModal}
+        patient={editedPatient}
+        genders={genders}
+      ></AddPatientModal>
+      <Box key="search-and-add-box">
+        <TextField
+          id="search-field"
+          label="Search"
+          variant="outlined"
+          onChange={(event) => {
+            setSearchText(event.target.value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              handleEnterPress();
+            }
+          }}
+        ></TextField>
+        <IconButton key="searc-button" onClick={() => handleEnterPress()}>
+          <SearchIcon />
+        </IconButton>
+        <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
+          <AddIcon></AddIcon>
+        </IconButton>
+      </Box>
       <TableContainer component={Paper}>
         <Table aria-label="Patients">
           <TableHead>
             <TableRow>
-              {columns.map(
-                (column) =>
-                  column.id === 'buttons' ? (
-                    <TableCell key={column.id} align={column.align}>
-                      <IconButton onClick={handleOpenAddPatientModal}>
-                        <AddIcon fontSize="small"></AddIcon>
-                      </IconButton>
-                    </TableCell>
-                  ) : (
-                    <TableCell key={column.id} align={column.align}>
-                      {column.label}
-                    </TableCell>
-                  )
-                // {
-                //   if (column.id === 'buttons') {
-                //     return (
-
-                //     );
-                //   } else {
-                //     return (
-
-                //     );
-                //   }
-                // }
+              {columns.map((column) =>
+                column.title ? (
+                  <TableCell key={column.id} align={column.align}>
+                    {column.label}
+                  </TableCell>
+                ) : (
+                  <TableCell key={column.id}></TableCell>
+                )
               )}
             </TableRow>
           </TableHead>
@@ -265,6 +218,18 @@ const PatientList = () => {
                 <TableCell>{patient.resource.telecom?.[0]?.value || '-'}</TableCell>
                 <TableCell>
                   <IconButton
+                    key={'edit-button-of-' + patient.resource.id}
+                    aria-label="edit"
+                    variant="warn"
+                    onClick={() => {
+                      setEditedPatient(patient);
+                      setIsModalOpen(true);
+                    }}
+                  >
+                    <EditIcon></EditIcon>
+                  </IconButton>
+                  <IconButton
+                    key={'delete-button-of-' + patient.resource.id}
                     aria-label="delete"
                     variant="error"
                     onClick={() => {
@@ -272,7 +237,7 @@ const PatientList = () => {
                       handleDeleteDialogOpen();
                     }}
                   >
-                    <DeleteIcon fontSize="small"></DeleteIcon>
+                    <DeleteIcon></DeleteIcon>
                   </IconButton>
                 </TableCell>
               </TableRow>

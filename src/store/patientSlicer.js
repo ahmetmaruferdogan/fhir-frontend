@@ -59,6 +59,22 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
   return newBundle;
 });
 
+export const updatePatient = createAsyncThunk('patients/updatePatient', async (params0) => {
+  const finalRequestBody = {
+    resourceType,
+    id: params0.id,
+    body: { resourceType, id: params0.id, ...params0 }
+  };
+  api
+    .update(finalRequestBody)
+    .then(() => {
+      toast.success('Patient updated successfully!');
+    })
+    .catch(() => {
+      toast.success('Could not update patient!');
+    });
+});
+
 export const createPatient = createAsyncThunk('patients/createPatient', async (params0) => {
   const finalRequestBody = {
     resourceType,
@@ -67,24 +83,53 @@ export const createPatient = createAsyncThunk('patients/createPatient', async (p
   await api.create(finalRequestBody);
 });
 
-export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithId', (id, { rejectWithValue }) => {
+export const fetchGenders = createAsyncThunk('patients/fetchGenders', async () => {
+  var administrativeGenders = [];
+  const finalRequestBody = {
+    resourceType: 'CodeSystem',
+    id: 'administrative-gender'
+  };
+  const apiResponse = await api.read(finalRequestBody);
+  apiResponse.concept.forEach((concept) => {
+    const administrativeGender = {
+      code: concept.code,
+      display: concept.display,
+      definition: concept.definition
+    };
+
+    if (concept.extension && concept.extension.length > 0) {
+      administrativeGender.comments = concept.extension[0].valueString;
+    }
+
+    administrativeGenders.push(administrativeGender);
+  });
+  return administrativeGenders;
+});
+
+export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithId', async (id) => {
   if (id < 0) {
     toast.error('Invalid id!');
-    return rejectWithValue('invalid id!');
+    return;
   }
   const finalRequestBody = {
     resourceType,
     id
   };
-  api.delete(finalRequestBody).catch(() => {
-    toast.error('Could not delete patient!');
-  });
+  await api
+    .delete(finalRequestBody)
+    .then(() => {
+      toast.success('Patient deleted successfully');
+    })
+    .catch(() => {
+      toast.error('Could not delete patient!');
+    });
 });
 
 const initialState = {
   bundle: {},
   loading: false,
-  error: ''
+  error: '',
+  genders: []
 };
 
 //#region SLICE CREATION
@@ -118,16 +163,33 @@ const patientsSlicer = createSlice({
         state.loading = false;
         toast.error('Error occured while creating patient!');
       })
+      .addCase(updatePatient.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(updatePatient.fulfilled, (state) => {
+        state.loading = false;
+      })
+      .addCase(updatePatient.rejected, (state) => {
+        state.loading = false;
+      })
       .addCase(deletePatientWithId.pending, (state) => {
         state.loading = true;
-        console.log('inside deletePatientWithId.pending');
       })
       .addCase(deletePatientWithId.fulfilled, (state) => {
         state.loading = false;
       })
       .addCase(deletePatientWithId.rejected, (state) => {
         state.loading = false;
-        console.log('inside deletePatientWithId.rejected');
+      })
+      .addCase(fetchGenders.pending, (state) => {
+        state.loading = true;
+      })
+      .addCase(fetchGenders.fulfilled, (state, action) => {
+        state.loading = false;
+        state.genders = action.payload;
+      })
+      .addCase(fetchGenders.rejected, (state) => {
+        state.loading = false;
       });
   }
 });

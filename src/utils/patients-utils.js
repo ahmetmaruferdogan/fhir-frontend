@@ -55,18 +55,18 @@ export const parseName = (patient) => {
   return parseSingleName(humanName);
 };
 
-// export const nextPageExists = (oldBundle) => {
-//   if (!oldBundle || !oldBundle.link) {
-//     return false;
-//   }
-//   const nextLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^next$/));
-//   return nextLinkObject ? true : false;
-// };
+export const nextPageExists = (oldBundle) => {
+  if (!oldBundle || !oldBundle.link) {
+    return false;
+  }
+  const nextLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^next$/));
+  return nextLinkObject ? true : false;
+};
 
-// export const prevPageExists = (oldBundle) => {
-//   if (!oldBundle || !oldBundle.link) {
-//     return false;
-//   }
-//   const prevLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^prev(ious)?$/));
-//   return prevLinkObject ? true : false;
-// };
+export const prevPageExists = (oldBundle) => {
+  if (!oldBundle || !oldBundle.link) {
+    return false;
+  }
+  const prevLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^prev(ious)?$/));
+  return prevLinkObject ? true : false;
+};

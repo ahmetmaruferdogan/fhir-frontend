@@ -1,142 +1,10 @@
-// import React, { useRef, useState } from 'react';
-// import { Button, Modal, TextField } from '@mui/material';
-// import { toast } from 'react-toastify';
-
-// const AddPatientModal = ({ open, onClose, onSave, id }) => {
-//   const initialPatientData = {
-//     name: '',
-//     gender: '',
-//     birthDate: '',
-//     telecom: '',
-//     id: undefined
-//   };
-//   const [patientData, setPatientData] = useState(initialPatientData);
-//   const textFieldRefs = useRef({});
-
-//   const handleClose = () => {
-//     setPatientData(initialPatientData);
-//     onClose();
-//   };
-
-//   const handleSave = () => {
-//     var data = {
-//       name: textFieldRefs.nameRef.value,
-//       gender: textFieldRefs.genderRef.value,
-//       birthDate: textFieldRefs.birthDateRef.value,
-//       telecom: textFieldRefs.telecomRef.value
-//     };
-
-//     if (!data.name) {
-//       toast.error('name cannot be empty!');
-//       return;
-//     }
-//     if (!data.gender) {
-//       toast.error('gender cannot be empty!');
-//       return;
-//     }
-//     if (!data.birthDate) {
-//       toast.error('birthDate cannot be empty!');
-//       return;
-//     }
-//     if (!data.telecom) {
-//       toast.error('telecom cannot be empty!');
-//       return;
-//     }
-
-//     var testString = String(data.name);
-//     data.name = {};
-//     testString = testString.split(' ');
-//     if (testString.length > 1) {
-//       data.name.family = testString[testString.length - 1];
-//       data.name.given = testString.slice(0, -1);
-//     } else {
-//       data.name.text = testString[0];
-//     }
-//     const tempArray = [];
-//     tempArray.push(data.name);
-//     data.name = tempArray;
-
-//     data.telecom = [
-//       {
-//         system: 'phone',
-//         value: data.telecom
-//       }
-//     ];
-//     if (id) {
-//       data = { id, ...data };
-//     }
-
-//     onSave(data);
-//     handleClose(id);
-//   };
-
-//   return (
-//     <Modal open={open} onClose={() => handleClose(id)}>
-//       <div>
-//         <h2>Create Patient</h2>
-//         <TextField
-//           label="Name"
-//           inputRef={(el) => (textFieldRefs.nameRef = el)}
-//           value={patientData.name}
-//           onChange={(e) =>
-//             setPatientData((prevData) => ({
-//               ...prevData,
-//               name: e.target.value
-//             }))
-//           }
-//         />
-//         <TextField
-//           label="Gender"
-//           inputRef={(el) => (textFieldRefs.genderRef = el)}
-//           value={patientData.gender}
-//           onChange={(e) =>
-//             setPatientData((prevData) => ({
-//               ...prevData,
-//               gender: e.target.value
-//             }))
-//           }
-//         />
-//         <TextField
-//           label="Birth Date"
-//           inputRef={(el) => (textFieldRefs.birthDateRef = el)}
-//           value={patientData.birthDate}
-//           onChange={(e) =>
-//             setPatientData((prevData) => ({
-//               ...prevData,
-//               birthDate: e.target.value
-//             }))
-//           }
-//         />
-//         <TextField
-//           label="Telecom"
-//           inputRef={(el) => (textFieldRefs.telecomRef = el)}
-//           value={patientData.telecom}
-//           onChange={(e) =>
-//             setPatientData((prevData) => ({
-//               ...prevData,
-//               telecom: e.target.value
-//             }))
-//           }
-//         />
-//         <div className="modal-actions">
-//           <Button variant="outlined" onClick={() => handleClose(id)}>
-//             Cancel
-//           </Button>
-//           <Button variant="contained" onClick={handleSave}>
-//             Save
-//           </Button>
-//         </div>
-//       </div>
-//     </Modal>
-//   );
-// };
-
-// export default AddPatientModal;
-
-import React, { useRef, useState } from 'react';
-import { Button, ButtonGroup, Modal, TextField } from '@mui/material';
-import { toast } from 'react-toastify';
+import React, { useEffect, useState } from 'react';
+import { Button, MenuItem, Modal, TextField, Typography } from '@mui/material';
 import { Box } from '@mui/system';
+import PropTypes from 'prop-types';
+import * as yup from 'yup';
+import { useDispatch } from 'react-redux';
+import { updatePatient, createPatient } from 'store/patientSlicer';
 
 const styles = {
   modal: {
@@ -160,125 +28,225 @@ const styles = {
   }
 };
 
-const AddPatientModal = ({ open, onClose, onSave, id }) => {
-  const initialPatientData = {
-    name: '',
+const AddPatientModal = ({ open, onClose, patient, genders }) => {
+  const dispatch = useDispatch();
+  AddPatientModal.propTypes = {
+    open: PropTypes.bool,
+    onClose: PropTypes.func,
+    patient: PropTypes.any,
+    genders: PropTypes.array
+  };
+  useEffect(() => {
+    setFormData(parsePatientDataToFormData(patient));
+  }, [patient]);
+  const gendersAsCodes = genders.map((gender) => gender.code);
+  const patientSchema = yup.object().shape({
+    given: yup.string().required('First Name is required'),
+    family: yup.string().required('Last Name is required'),
+    gender: yup.string().required('Gender is required').oneOf(gendersAsCodes, 'Gender is required'),
+    birthDate: yup
+      .string()
+      .required('Birth Date is required')
+      .matches(/^\d{4}-\d{2}-\d{2}$/, 'Birth Date must be in the format "yyyy-mm-dd"'),
+    telecom: yup.string().required('Telecom is required')
+  });
+  const initialFormData = {
+    given: '',
+    family: '',
     gender: '',
     birthDate: '',
     telecom: '',
     id: undefined
   };
-  const [patientData, setPatientData] = useState(initialPatientData);
-  const textFieldRefs = useRef({});
+
+  const parsePatientDataToFormData = (patientData) => {
+    var result = initialFormData;
+    result.id = patientData?.resource?.id || undefined;
+    if (!result.id) {
+      return result;
+    }
+    result.given =
+      patientData?.resource?.name
+        ?.filter((nameEntry) => (nameEntry.given ? true : false))[0]
+        ?.given.join(' ')
+        .trim() || '';
+    result.family = patientData?.resource?.name?.filter((nameEntry) => (nameEntry.family ? true : false))[0]?.family || '';
+    result.gender = patientData?.resource?.gender || '';
+    result.birthDate = patientData?.resource?.birthDate || '';
+    result.telecom = patientData?.resource?.telecom?.filter((element) => element?.system === 'phone')[0]?.value || '';
+    return result;
+  };
+
+  const [formData, setFormData] = useState(parsePatientDataToFormData(patient));
+  const [formErrors, setFormErrors] = useState(initialFormData);
 
   const handleClose = () => {
-    setPatientData(initialPatientData);
+    setFormData(initialFormData);
     onClose();
   };
 
-  const handleSave = () => {
-    var data = {
-      name: textFieldRefs.nameRef.value,
-      gender: textFieldRefs.genderRef.value,
-      birthDate: textFieldRefs.birthDateRef.value,
-      telecom: textFieldRefs.telecomRef.value
+  const parseFormData = () => {
+    var finalRequestBody = {
+      id: undefined,
+      name: undefined,
+      gender: undefined,
+      birthDate: undefined,
+      telecom: undefined
     };
+    finalRequestBody.id = formData.id;
+    finalRequestBody.name = [{ given: formData.given.split(' '), family: formData.family }];
+    finalRequestBody.gender = formData.gender;
+    finalRequestBody.birthDate = formData.birthDate;
+    finalRequestBody.telecom = [{ system: 'phone', value: formData.telecom, use: 'mobile', rank: 1 }];
+    return finalRequestBody;
+  };
 
-    if (!data.name || !data.gender || !data.birthDate || !data.telecom) {
-      toast.error('All fields are required!');
-      return;
+  const handleSave = () => {
+    patientSchema
+      .validate(formData, { abortEarly: false })
+      .then(() => {
+        const params0 = parseFormData();
+        handleSavePatient(params0);
+        handleClose();
+      })
+      .catch((validationErrors) => {
+        console.log('formdata', formData);
+        console.log('error', validationErrors);
+        const errors = {};
+        validationErrors?.inner?.forEach((error) => {
+          errors[error.path] = error.message;
+        });
+        setFormErrors(errors);
+        return;
+      });
+  };
+
+  const addPatient = (params0) => {
+    dispatch(createPatient(params0));
+  };
+
+  const editpatient = (params0) => {
+    dispatch(updatePatient(params0));
+  };
+
+  const handleSavePatient = (params0) => {
+    var patientId = patient?.resource?.id || undefined;
+    console.log(JSON.stringify(params0));
+    if (!patientId) {
+      addPatient(params0);
+    } else if (patientId) {
+      editpatient(params0);
     }
-
-    var testString = String(data.name);
-    data.name = {};
-    testString = testString.split(' ');
-    if (testString.length > 1) {
-      data.name.family = testString[testString.length - 1];
-      data.name.given = testString.slice(0, -1);
-    } else {
-      data.name.text = testString[0];
-    }
-    const tempArray = [];
-    tempArray.push(data.name);
-    data.name = tempArray;
-
-    data.telecom = [
-      {
-        system: 'phone',
-        value: data.telecom
-      }
-    ];
-    if (id) {
-      data = { id, ...data };
-    }
-
-    onSave(data);
-    handleClose(id);
   };
 
   return (
     <Modal open={open} onClose={() => handleClose(id)} style={styles.modal}>
       <Box style={styles.modalContent}>
-        <h2>Create Patient</h2>
-        <form>
-          <TextField
-            style={styles.textField}
-            label="Name"
-            inputRef={(el) => (textFieldRefs.nameRef = el)}
-            value={patientData.name}
-            onChange={(e) =>
-              setPatientData((prevData) => ({
-                ...prevData,
-                name: e.target.value
-              }))
-            }
-          />
-          <TextField
-            style={styles.textField}
-            label="Gender"
-            inputRef={(el) => (textFieldRefs.genderRef = el)}
-            value={patientData.gender}
-            onChange={(e) =>
-              setPatientData((prevData) => ({
-                ...prevData,
-                gender: e.target.value
-              }))
-            }
-          />
-          <TextField
-            style={styles.textField}
-            label="Birth Date"
-            inputRef={(el) => (textFieldRefs.birthDateRef = el)}
-            value={patientData.birthDate}
-            onChange={(e) =>
-              setPatientData((prevData) => ({
-                ...prevData,
-                birthDate: e.target.value
-              }))
-            }
-          />
-          <TextField
-            style={styles.textField}
-            label="Telecom"
-            inputRef={(el) => (textFieldRefs.telecomRef = el)}
-            value={patientData.telecom}
-            onChange={(e) =>
-              setPatientData((prevData) => ({
-                ...prevData,
-                telecom: e.target.value
-              }))
-            }
-          />
-        </form>
-        <div className="modal-actions">
-          <ButtonGroup style={styles.buttonContainer}>
-            <Button variant="outlined" onClick={() => handleClose(id)}>
-              Cancel
-            </Button>
-            <Button variant="contained" onClick={handleSave}>
-              {id ? 'Update' : 'Create'}
-            </Button>
-          </ButtonGroup>
+        <Typography variant="h4" id="create-patient-modal" padding={1}>
+          Create New Patient
+        </Typography>
+        <TextField
+          name="given"
+          label="First Name"
+          variant="outlined"
+          // ref={formReferances.given}
+          fullWidth
+          style={styles.textField}
+          value={formData.given}
+          onChange={(event) =>
+            setFormData({
+              ...formData,
+              given: event.target.value
+            })
+          }
+          error={Boolean(formErrors.given)}
+          helperText={formErrors.given}
+        />
+        <TextField
+          name="family"
+          label="Last Name"
+          variant="outlined"
+          // ref={formReferances.family}
+          fullWidth
+          style={styles.textField}
+          value={formData.family}
+          onChange={(event) =>
+            setFormData({
+              ...formData,
+              family: event.target.value
+            })
+          }
+          error={Boolean(formErrors.family)}
+          helperText={formErrors.family}
+        />
+        <TextField
+          name="gender"
+          label="Gender"
+          select
+          variant="outlined"
+          fullWidth
+          // ref={formReferances.gender}
+          selectprops={{
+            native: true
+          }}
+          style={styles.textField}
+          value={formData.gender}
+          onChange={(event) =>
+            setFormData({
+              ...formData,
+              gender: event.target.value
+            })
+          }
+          error={Boolean(formErrors.gender)}
+          helperText={formErrors.gender}
+        >
+          {genders?.map((option) => (
+            <MenuItem key={option.code} value={option.code}>
+              {option.display}
+            </MenuItem>
+          ))}
+        </TextField>
+        <TextField
+          name="birthDate"
+          label="BirthDate"
+          variant="outlined"
+          // ref={formReferances.birthDate}
+          fullWidth
+          style={styles.textField}
+          value={formData.birthDate}
+          onChange={(event) =>
+            setFormData({
+              ...formData,
+              birthDate: event.target.value
+            })
+          }
+          error={Boolean(formErrors.birthDate)}
+          helperText={formErrors.birthDate}
+        />
+        <TextField
+          name="telecom"
+          label="Telecom"
+          variant="outlined"
+          // ref={formReferances.telecom}
+          fullWidth
+          style={styles.textField}
+          value={formData.telecom}
+          onChange={(event) =>
+            setFormData({
+              ...formData,
+              telecom: event.target.value
+            })
+          }
+          error={Boolean(formErrors.telecom)}
+          helperText={formErrors.telecom}
+        />
+        <div style={styles.buttonContainer}>
+          <Button variant="contained" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button variant="contained" color="primary" onClick={handleSave}>
+            Save
+          </Button>
         </div>
       </Box>
     </Modal>
