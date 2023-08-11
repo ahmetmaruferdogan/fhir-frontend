@@ -203,7 +203,7 @@ const PatientList = () => {
                           handleSearchWithParams(searchParams);
                         }
                       }}
-                    ></TextField>
+                    />
                   </TableCell>
                 ) : (
                   <TableCell key={column.id}>
