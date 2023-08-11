@@ -193,7 +193,7 @@ const PatientList = () => {
                     {column.label}
                     <TextField
                       id={column.id + '-search-field'}
-                      label={'Search for ' + column.id}
+                      label={'Search for ' + column.label}
                       variant="outlined"
                       onChange={(event) => {
                         setSearchParams({ ...searchParams, [column.id]: event.target.value });
