@@ -70,3 +70,21 @@ export const prevPageExists = (oldBundle) => {
   const prevLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^prev(ious)?$/));
   return prevLinkObject ? true : false;
 };
+
+export const parsePatientDataToFormData = (patientData, initialFormData) => {
+  var result = initialFormData;
+  result.id = patientData?.resource?.id || undefined;
+  if (!result.id) {
+    return result;
+  }
+  result.given =
+    patientData?.resource?.name
+      ?.filter((nameEntry) => (nameEntry.given ? true : false))[0]
+      ?.given.join(' ')
+      .trim() || '';
+  result.family = patientData?.resource?.name?.filter((nameEntry) => (nameEntry.family ? true : false))[0]?.family || '';
+  result.gender = patientData?.resource?.gender || '';
+  result.birthDate = patientData?.resource?.birthDate || '';
+  result.telecom = patientData?.resource?.telecom?.filter((element) => element?.system === 'phone')[0]?.value || '';
+  return result;
+};

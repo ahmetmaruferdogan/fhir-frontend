@@ -18,6 +18,7 @@ import { toast } from 'react-toastify';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
 import SkeletonPatientList from './skeleton/SkeletonPatientList';
 import EditIcon from '@mui/icons-material/Edit';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import SearchIcon from '@mui/icons-material/Search';
 
 const PatientList = () => {
@@ -36,7 +37,12 @@ const PatientList = () => {
     dispatch(fetchPatients(params0));
   };
 
-  const [editedPatient, setEditedPatient] = useState(undefined);
+  const [editedPatient, setEditedPatient] = useState({ id: undefined });
+  const textInputRefs = useRef({});
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [searchParams, setSearchParams] = useState({});
 
   const deletePatient = (patients) => {
     if (!patients) {
@@ -50,17 +56,23 @@ const PatientList = () => {
     }
   };
 
-  const textInputRefs = useRef({});
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const parseSearchInputToParams = (searchParams0) => {
+    let result = {};
+    result.name = searchParams0.name;
+    result._id = searchParams0.id;
+    result.gender = searchParams0.gender;
+    result.birthdate = searchParams0.birthdate;
+    result._content = searchParams0.telecom;
+    return result;
+  };
 
-  const handleEnterPress = () => {
-    var searchParameters = { _content: searchText };
+  const handleSearchWithParams = (searchParams0) => {
+    var searchParameters = parseSearchInputToParams(searchParams0);
     executeSearch({
       bundle: {},
       searchParams: searchParameters
     });
-    setSearchText('');
+    setSearchParams({});
     setCurrentPage(0);
     Object.values(textInputRefs.current).forEach((ref) => (ref.value = ''));
   };
@@ -73,9 +85,6 @@ const PatientList = () => {
     setIsModalOpen(false);
     setEditedPatient(undefined);
   };
-
-  const [currentPage, setCurrentPage] = useState(0);
-  const [searchText, setSearchText] = useState('');
 
   const fetchPrevPage = (oldBundle) => {
     if (!prevPageExists(oldBundle)) {
@@ -136,7 +145,7 @@ const PatientList = () => {
     { id: 'id', label: 'id', minWidth: 100, title: true },
     { id: 'name', label: 'Full Name', minWidth: 200, title: true },
     { id: 'gender', label: 'Gender', minWidth: 100, title: true },
-    { id: 'birthdate', label: 'Birth Date', minWidth: 150, title: true },
+    { id: 'birthdate', label: 'Birthdate', minWidth: 150, title: true },
     { id: 'telecom', label: 'Telecom', minWidth: 150, title: true },
     { id: 'buttons', label: '', minWidth: 150 }
   ];
@@ -172,27 +181,6 @@ const PatientList = () => {
         patient={editedPatient}
         genders={genders}
       ></AddPatientModal>
-      <Box key="search-and-add-box">
-        <TextField
-          id="search-field"
-          label="Search"
-          variant="outlined"
-          onChange={(event) => {
-            setSearchText(event.target.value);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter') {
-              handleEnterPress();
-            }
-          }}
-        ></TextField>
-        <IconButton key="searc-button" onClick={() => handleEnterPress()}>
-          <SearchIcon />
-        </IconButton>
-        <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
-          <AddIcon></AddIcon>
-        </IconButton>
-      </Box>
       <TableContainer component={Paper}>
         <Table aria-label="Patients">
           <TableHead>
@@ -201,9 +189,34 @@ const PatientList = () => {
                 column.title ? (
                   <TableCell key={column.id} align={column.align}>
                     {column.label}
+                    <TextField
+                      id={column.id + '-search-field'}
+                      label={'Search for ' + column.id}
+                      variant="outlined"
+                      onChange={(event) => {
+                        setSearchParams({ ...searchParams, [column.id]: event.target.value });
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') {
+                          handleSearchWithParams(searchParams);
+                        }
+                      }}
+                    ></TextField>
                   </TableCell>
                 ) : (
-                  <TableCell key={column.id}></TableCell>
+                  <TableCell key={column.id}>
+                    <Box>
+                      <IconButton key="searc-button" onClick={() => handleSearchWithParams(searchParams)}>
+                        <SearchIcon />
+                      </IconButton>
+                      <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
+                        <AddIcon />
+                      </IconButton>
+                      <IconButton key="refresh-button" onClick={() => handleSearchWithParams(searchParams)}>
+                        <RefreshIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
                 )
               )}
             </TableRow>

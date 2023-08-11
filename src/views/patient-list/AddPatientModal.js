@@ -5,6 +5,7 @@ import PropTypes from 'prop-types';
 import * as yup from 'yup';
 import { useDispatch } from 'react-redux';
 import { updatePatient, createPatient } from 'store/patientSlicer';
+import { parsePatientDataToFormData } from 'utils/patients-utils';
 
 const styles = {
   modal: {
@@ -37,7 +38,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     genders: PropTypes.array
   };
   useEffect(() => {
-    setFormData(parsePatientDataToFormData(patient));
+    setFormData(parsePatientDataToFormData(patient, initialFormData));
   }, [patient]);
   const gendersAsCodes = genders.map((gender) => gender.code);
   const patientSchema = yup.object().shape({
@@ -59,25 +60,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     id: undefined
   };
 
-  const parsePatientDataToFormData = (patientData) => {
-    var result = initialFormData;
-    result.id = patientData?.resource?.id || undefined;
-    if (!result.id) {
-      return result;
-    }
-    result.given =
-      patientData?.resource?.name
-        ?.filter((nameEntry) => (nameEntry.given ? true : false))[0]
-        ?.given.join(' ')
-        .trim() || '';
-    result.family = patientData?.resource?.name?.filter((nameEntry) => (nameEntry.family ? true : false))[0]?.family || '';
-    result.gender = patientData?.resource?.gender || '';
-    result.birthDate = patientData?.resource?.birthDate || '';
-    result.telecom = patientData?.resource?.telecom?.filter((element) => element?.system === 'phone')[0]?.value || '';
-    return result;
-  };
-
-  const [formData, setFormData] = useState(parsePatientDataToFormData(patient));
+  const [formData, setFormData] = useState(parsePatientDataToFormData(patient, initialFormData));
   const [formErrors, setFormErrors] = useState(initialFormData);
 
   const handleClose = () => {
@@ -131,7 +114,6 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
 
   const handleSavePatient = (params0) => {
     var patientId = patient?.resource?.id || undefined;
-    console.log(JSON.stringify(params0));
     if (!patientId) {
       addPatient(params0);
     } else if (patientId) {
