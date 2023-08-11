@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Button, MenuItem, Modal, TextField, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import PropTypes from 'prop-types';
 import * as yup from 'yup';
-import { useDispatch } from 'react-redux';
-import { updatePatient, createPatient } from 'store/patientSlicer';
-import { parsePatientDataToFormData } from 'utils/patients-utils';
+import { useDispatch, useSelector } from 'react-redux';
+import { updatePatient, createPatient, checkCznValid, setUndefinedCznValid } from 'store/patientSlicer';
+import { parsePatientDataToFormData, parseCzn } from 'utils/patients-utils';
 
 const styles = {
   modal: {
@@ -31,6 +31,7 @@ const styles = {
 
 const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const dispatch = useDispatch();
+  const { cznValid } = useSelector((state) => state.patients);
   AddPatientModal.propTypes = {
     open: PropTypes.bool,
     onClose: PropTypes.func,
@@ -39,6 +40,8 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   };
   useEffect(() => {
     setFormData(parsePatientDataToFormData(patient, initialFormData));
+    checkCzn(patient?.resource?.id || undefined, parseCzn(patient?.resource));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patient]);
   const gendersAsCodes = genders.map((gender) => gender.code);
   const patientSchema = yup.object().shape({
@@ -49,7 +52,12 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
       .string()
       .required('Birth Date is required')
       .matches(/^\d{4}-\d{2}-\d{2}$/, 'Birth Date must be in the format "yyyy-mm-dd"'),
-    telecom: yup.string().required('Telecom is required')
+    telecom: yup.string().required('Telecom is required'),
+    citizenNumber: yup
+      .string()
+      .required('Citizenship number is required')
+      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, 'Citizen number is not valid!')
+    // ppn: yup.string().required('Passport number is required').matches("^[A-Z][0-9]{8}$")
   });
   const initialFormData = {
     given: '',
@@ -57,14 +65,17 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     gender: '',
     birthDate: '',
     telecom: '',
+    citizenNumber: '',
     id: undefined
   };
 
   const [formData, setFormData] = useState(parsePatientDataToFormData(patient, initialFormData));
-  const [formErrors, setFormErrors] = useState(initialFormData);
+  const [formErrors, setFormErrors] = useState({ ...initialFormData });
 
   const handleClose = () => {
-    setFormData(initialFormData);
+    setFormData({});
+    setFormErrors({});
+    dispatch(setUndefinedCznValid());
     onClose();
   };
 
@@ -81,20 +92,38 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     finalRequestBody.gender = formData.gender;
     finalRequestBody.birthDate = formData.birthDate;
     finalRequestBody.telecom = [{ system: 'phone', value: formData.telecom, use: 'mobile', rank: 1 }];
+    finalRequestBody.identifier = [
+      {
+        use: 'usual',
+        type: {
+          coding: [
+            {
+              system: 'http://terminology.hl7.org/CodeSystem/v2-0203',
+              code: 'CZ'
+            }
+          ]
+        },
+        value: formData.citizenNumber
+      }
+    ];
     return finalRequestBody;
   };
+  const citizenNumberFieldRef = useRef();
 
   const handleSave = () => {
     patientSchema
       .validate(formData, { abortEarly: false })
       .then(() => {
+        if (!cznValid) {
+          setFormErrors({ citizenNumber: 'Citizen number already exists!' });
+          return;
+        }
+        setFormErrors({});
         const params0 = parseFormData();
         handleSavePatient(params0);
         handleClose();
       })
       .catch((validationErrors) => {
-        console.log('formdata', formData);
-        console.log('error', validationErrors);
         const errors = {};
         validationErrors?.inner?.forEach((error) => {
           errors[error.path] = error.message;
@@ -121,12 +150,49 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     }
   };
 
+  const checkCzn = (id, czn) => {
+    if (!id || !czn) {
+      if (cznValid === undefined) {
+        dispatch(checkCznValid({ id: formData.id, czn: formData.citizenNumber }));
+        return;
+      }
+      return;
+    }
+    if (cznValid === undefined) {
+      dispatch(checkCznValid({ id, czn }));
+    }
+  };
+
   return (
     <Modal open={open} onClose={() => handleClose(id)} style={styles.modal}>
       <Box style={styles.modalContent}>
         <Typography variant="h4" id="create-patient-modal" padding={1}>
-          Create New Patient
+          {patient?.resource?.id ? 'Update Patient' : 'Create Patient'}
         </Typography>
+        <TextField
+          name="citizenNumber"
+          label="Citizen Number"
+          variant="outlined"
+          ref={citizenNumberFieldRef}
+          fullWidth
+          style={styles.textField}
+          value={formData.citizenNumber}
+          onChange={(event) => {
+            setFormData({
+              ...formData,
+              citizenNumber: event.target.value
+            });
+            setFormErrors({
+              ...formErrors,
+              citizenNumber: ''
+            });
+            if (event.target.value.match(/^[1-9]{1}[0-9]{9}[02468]{1}$/) || cznValid === undefined) {
+              dispatch(checkCznValid({ id: formData.id, czn: event.target.value }));
+            }
+          }}
+          error={cznValid === false || Boolean(formErrors.citizenNumber)}
+          helperText={cznValid === false ? 'Citizen number already exist!' : formErrors.citizenNumber}
+        ></TextField>
         <TextField
           name="given"
           label="First Name"
@@ -135,12 +201,16 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           fullWidth
           style={styles.textField}
           value={formData.given}
-          onChange={(event) =>
+          onChange={(event) => {
             setFormData({
               ...formData,
               given: event.target.value
-            })
-          }
+            });
+            setFormErrors({
+              ...formErrors,
+              given: ''
+            });
+          }}
           error={Boolean(formErrors.given)}
           helperText={formErrors.given}
         />
@@ -152,12 +222,16 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           fullWidth
           style={styles.textField}
           value={formData.family}
-          onChange={(event) =>
+          onChange={(event) => {
             setFormData({
               ...formData,
               family: event.target.value
-            })
-          }
+            });
+            setFormErrors({
+              ...formErrors,
+              family: ''
+            });
+          }}
           error={Boolean(formErrors.family)}
           helperText={formErrors.family}
         />
@@ -173,12 +247,16 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           }}
           style={styles.textField}
           value={formData.gender}
-          onChange={(event) =>
+          onChange={(event) => {
             setFormData({
               ...formData,
               gender: event.target.value
-            })
-          }
+            });
+            setFormErrors({
+              ...formErrors,
+              gender: ''
+            });
+          }}
           error={Boolean(formErrors.gender)}
           helperText={formErrors.gender}
         >
@@ -196,12 +274,16 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           fullWidth
           style={styles.textField}
           value={formData.birthDate}
-          onChange={(event) =>
+          onChange={(event) => {
             setFormData({
               ...formData,
               birthDate: event.target.value
-            })
-          }
+            });
+            setFormErrors({
+              ...formErrors,
+              birthDate: ''
+            });
+          }}
           error={Boolean(formErrors.birthDate)}
           helperText={formErrors.birthDate}
         />
@@ -213,12 +295,16 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           fullWidth
           style={styles.textField}
           value={formData.telecom}
-          onChange={(event) =>
+          onChange={(event) => {
             setFormData({
               ...formData,
               telecom: event.target.value
-            })
-          }
+            });
+            setFormErrors({
+              ...formErrors,
+              telecom: ''
+            });
+          }}
           error={Boolean(formErrors.telecom)}
           helperText={formErrors.telecom}
         />
@@ -226,7 +312,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           <Button variant="contained" onClick={handleClose}>
             Cancel
           </Button>
-          <Button variant="contained" color="primary" onClick={handleSave}>
+          <Button disabled={cznValid === undefined} variant="contained" color="primary" onClick={handleSave}>
             Save
           </Button>
         </div>

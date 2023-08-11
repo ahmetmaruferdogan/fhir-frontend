@@ -1,7 +1,22 @@
+// import api from '../api';
+// import { resourceType } from 'store/patientSlicer';
+
 export const extractGetpagesoffsetValue = (url) => {
   const regex = /_getpagesoffset=(\d+)/;
   const match = regex.exec(url);
   return match ? Number(match[1]) : undefined;
+};
+
+export const parseCzn = (patient) => {
+  return (
+    patient?.identifier?.filter((element) =>
+      element?.type?.coding?.filter(
+        (element1) => element1?.code === 'CZ' && element1.system === 'http://terminology.hl7.org/CodeSystem/v2-0203'
+      )[0]
+        ? true
+        : false
+    )[0]?.value || ''
+  );
 };
 
 export const parseName = (patient) => {
@@ -72,7 +87,7 @@ export const prevPageExists = (oldBundle) => {
 };
 
 export const parsePatientDataToFormData = (patientData, initialFormData) => {
-  var result = initialFormData;
+  var result = { ...initialFormData };
   result.id = patientData?.resource?.id || undefined;
   if (!result.id) {
     return result;
@@ -86,5 +101,6 @@ export const parsePatientDataToFormData = (patientData, initialFormData) => {
   result.gender = patientData?.resource?.gender || '';
   result.birthDate = patientData?.resource?.birthDate || '';
   result.telecom = patientData?.resource?.telecom?.filter((element) => element?.system === 'phone')[0]?.value || '';
+  result.citizenNumber = parseCzn(patientData?.resource);
   return result;
 };

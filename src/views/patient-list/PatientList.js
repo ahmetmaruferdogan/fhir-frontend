@@ -1,6 +1,6 @@
 import { fetchPatients, deletePatientWithId, fetchGenders } from '../../store/patientSlicer';
 import { React, useEffect, useRef, useState } from 'react';
-import { parseName, prevPageExists, nextPageExists } from '../../utils/patients-utils';
+import { parseCzn, parseName, prevPageExists, nextPageExists } from '../../utils/patients-utils';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -58,11 +58,12 @@ const PatientList = () => {
 
   const parseSearchInputToParams = (searchParams0) => {
     let result = {};
-    result.name = searchParams0.name;
-    result._id = searchParams0.id;
-    result.gender = searchParams0.gender;
-    result.birthdate = searchParams0.birthdate;
-    result._content = searchParams0.telecom;
+    if (searchParams0.name) result.name = searchParams0.name;
+    if (searchParams0.id) result._id = searchParams0.id;
+    if (searchParams0.gender) result.gender = searchParams0.gender;
+    if (searchParams0.birthdate) result.birthdate = searchParams0.birthdate;
+    if (searchParams0.telecom) result._content = searchParams0.telecom;
+    if (searchParams0.czn) result.identifier = searchParams0.czn;
     return result;
   };
 
@@ -142,11 +143,12 @@ const PatientList = () => {
   };
 
   const columns = [
-    { id: 'id', label: 'id', minWidth: 100, title: true },
-    { id: 'name', label: 'Full Name', minWidth: 200, title: true },
-    { id: 'gender', label: 'Gender', minWidth: 100, title: true },
-    { id: 'birthdate', label: 'Birthdate', minWidth: 150, title: true },
-    { id: 'telecom', label: 'Telecom', minWidth: 150, title: true },
+    { id: 'czn', label: 'Citizen Number', minWidth: 150, search: true },
+    { id: 'id', label: 'id', minWidth: 100, search: true },
+    { id: 'name', label: 'Full Name', minWidth: 200, search: true },
+    { id: 'gender', label: 'Gender', minWidth: 100, search: true },
+    { id: 'birthdate', label: 'Birthdate', minWidth: 150, search: true },
+    { id: 'telecom', label: 'Telecom', minWidth: 150, search: true },
     { id: 'buttons', label: '', minWidth: 150 }
   ];
 
@@ -186,7 +188,7 @@ const PatientList = () => {
           <TableHead>
             <TableRow>
               {columns.map((column) =>
-                column.title ? (
+                column.search ? (
                   <TableCell key={column.id} align={column.align}>
                     {column.label}
                     <TextField
@@ -224,6 +226,7 @@ const PatientList = () => {
           <TableBody>
             {bundle?.entry?.map((patient) => (
               <TableRow key={patient.resource.id}>
+                <TableCell>{parseCzn(patient.resource)}</TableCell>
                 <TableCell>{patient.resource.id || '-'}</TableCell>
                 <TableCell>{parseName(patient.resource)}</TableCell>
                 <TableCell>{patient.resource.gender || '-'}</TableCell>

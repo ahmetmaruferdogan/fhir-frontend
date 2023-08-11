@@ -4,7 +4,7 @@ import { extractGetpagesoffsetValue } from '../utils/patients-utils';
 
 import { toast } from 'react-toastify';
 
-const resourceType = 'Patient';
+export const resourceType = 'Patient';
 
 export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (params0) => {
   var searchType = params0?.searchType;
@@ -125,17 +125,47 @@ export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithI
     });
 });
 
+export const checkCznValid = createAsyncThunk('patients/checkCznExist', async ({ id, czn }) => {
+  if (id === undefined || czn === undefined) return undefined;
+  const result = api
+    .search({
+      resourceType,
+      searchParams: {
+        identifier: czn,
+        _total: 'accurate'
+      }
+    })
+    .then((response) => {
+      if (response?.total < 1) {
+        return true;
+      } else if (id && response?.total === 1) {
+        const otherId = response?.entry[0]?.resource?.id;
+        const idsMatch = otherId === id;
+        return idsMatch;
+      } else {
+        return false;
+      }
+    });
+  return result;
+});
+
 const initialState = {
   bundle: {},
   loading: false,
   error: '',
-  genders: []
+  genders: [],
+  cznValid: undefined
 };
 
 //#region SLICE CREATION
 const patientsSlicer = createSlice({
   name: 'patients',
   initialState,
+  reducers: {
+    setUndefinedCznValid(state) {
+      state.cznValid = undefined;
+    }
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPatients.pending, (state) => {
@@ -190,10 +220,19 @@ const patientsSlicer = createSlice({
       })
       .addCase(fetchGenders.rejected, (state) => {
         state.loading = false;
+      })
+      .addCase(checkCznValid.pending, (state) => {
+        state.cznValid = undefined;
+      })
+      .addCase(checkCznValid.fulfilled, (state, action) => {
+        state.cznValid = action.payload;
+      })
+      .addCase(checkCznValid.rejected, (state) => {
+        state.cznValid = false;
       });
   }
 });
 
 //#endregion
-
+export const { setUndefinedCznValid } = patientsSlicer.actions;
 export default patientsSlicer.reducer;
