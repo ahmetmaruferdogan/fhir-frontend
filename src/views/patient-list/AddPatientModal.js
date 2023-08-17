@@ -5,7 +5,7 @@ import PropTypes from 'prop-types';
 import * as yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatient, createPatient, checkCznValid, setUndefinedCznValid } from 'store/patientSlicer';
-import { parsePatientDataToFormData, parseCzn } from 'utils/patients-utils';
+import { parseCzn } from 'utils/patients-utils';
 import { useTranslation } from 'react-i18next';
 const referenceDate = new Date('1900-01-01');
 const styles = {
@@ -34,7 +34,6 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const dispatch = useDispatch();
   const { cznValid } = useSelector((state) => state.patients);
   const [t, i18n] = useTranslation('global');
-  t('patient.menu.title');
   AddPatientModal.propTypes = {
     open: PropTypes.bool,
     onClose: PropTypes.func,
@@ -65,6 +64,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
       .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, 'Citizen number is not valid!')
     // ppn: yup.string().required('Passport number is required').matches("^[A-Z][0-9]{8}$")
   });
+
   const initialFormData = {
     given: '',
     family: '',
@@ -73,6 +73,25 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     telecom: '',
     citizenNumber: '',
     id: undefined
+  };
+
+  const parsePatientDataToFormData = (patientData, initialFormData) => {
+    var result = { ...initialFormData };
+    result.id = patientData?.resource?.id || undefined;
+    if (!result.id) {
+      return result;
+    }
+    result.given =
+      patientData?.resource?.name
+        ?.filter((nameEntry) => (nameEntry.given ? true : false))[0]
+        ?.given.join(' ')
+        .trim() || '';
+    result.family = patientData?.resource?.name?.filter((nameEntry) => (nameEntry.family ? true : false))[0]?.family || '';
+    result.gender = patientData?.resource?.gender || '';
+    result.birthDate = patientData?.resource?.birthDate || '';
+    result.telecom = patientData?.resource?.telecom?.filter((element) => element?.system === 'phone')[0]?.value || '';
+    result.citizenNumber = parseCzn(patientData?.resource);
+    return result;
   };
 
   const [formData, setFormData] = useState(parsePatientDataToFormData(patient, initialFormData));
@@ -168,7 +187,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const checkCzn = (id, czn) => {
     if (!id || !czn) {
       if (cznValid === undefined) {
-        dispatch(checkCznValid({ id: formData.id, czn: formData.citizenNumber }));
+        dispatch(checkCznValid({ id: formData?.id || '', czn: formData.citizenNumber }));
         return;
       }
       return;
@@ -179,7 +198,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   };
 
   return (
-    <Modal open={open} onClose={() => handleClose(id)} style={styles.modal}>
+    <Modal open={open} onClose={() => handleClose()} style={styles.modal}>
       <Box
         style={styles.modalContent}
         sx={{
@@ -191,11 +210,11 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         }}
       >
         <Typography variant="h4" id="create-patient-modal" padding={1}>
-          {patient?.resource?.id ? 'Update Patient' : 'Create Patient'}
+          {patient?.resource?.id ? t('patient.addModal.title.update') : t('patient.addModal.title.create')}
         </Typography>
         <TextField
           name="citizenNumber"
-          label="Citizen Number"
+          label={t('patient.list.columns.czn')}
           variant="standard"
           ref={citizenNumberFieldRef}
           style={styles.textField}
@@ -210,7 +229,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
               citizenNumber: ''
             });
             if (event.target.value.match(/^[1-9]{1}[0-9]{9}[02468]{1}$/) || cznValid === undefined) {
-              dispatch(checkCznValid({ id: formData.id, czn: event.target.value }));
+              dispatch(checkCznValid({ id: formData?.id || '', czn: event.target.value }));
             }
           }}
           error={cznValid === false || Boolean(formErrors.citizenNumber)}
@@ -218,7 +237,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         ></TextField>
         <TextField
           name="given"
-          label="First Name"
+          label={t('patient.list.columns.firstName')}
           variant="standard"
           // ref={formReferances.given}
 
@@ -239,7 +258,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         />
         <TextField
           name="family"
-          label="Last Name"
+          label={t('patient.list.columns.lastName')}
           variant="standard"
           // ref={formReferances.family}
 
@@ -260,7 +279,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         />
         <TextField
           name="gender"
-          label="Gender"
+          label={t('patient.list.columns.gender')}
           select
           variant="standard"
           // ref={formReferances.gender}
@@ -284,13 +303,13 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         >
           {genders?.concept?.map((option) => (
             <MenuItem key={option.code} value={option.code}>
-              {option?.designation?.filter((element) => element.language === i18n.language)[0]?.value || ''}
+              {option?.designation?.filter((element) => element.language === i18n.language)[0]?.value || option?.display || ''}
             </MenuItem>
           ))}
         </TextField>
         <TextField
           name="birthDate"
-          label="BirthDate"
+          label={t('patient.list.columns.birthdate')}
           variant="standard"
           // ref={formReferances.birthDate}
 
@@ -311,7 +330,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         />
         <TextField
           name="telecom"
-          label="Telecom"
+          label={t('patient.list.columns.telecom')}
           variant="standard"
           // ref={formReferances.telecom}
 

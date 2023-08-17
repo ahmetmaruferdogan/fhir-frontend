@@ -32,6 +32,7 @@ const PatientList = () => {
       dispatch(fetchGenders());
     }
     console.log('genders', genders);
+    console.log('i18n', i18n);
     executeSearch();
     // console.log('t', t);
     // console.log('i18n', i18n);
@@ -175,9 +176,12 @@ const PatientList = () => {
   };
 
   const getGenderValueBasedOnLanguage = (gender) => {
-    return genders?.concept
-      ?.filter((element) => element.code === gender)[0]
-      ?.designation.filter((element1) => element1.language === i18n.language)[0].value;
+    const genderConceptObject = genders?.concept?.filter((element) => element.code === gender)[0] || undefined;
+    return (
+      genderConceptObject?.designation?.filter((element1) => element1.language === i18n.language)[0]?.value ||
+      genderConceptObject?.display ||
+      undefined
+    );
   };
 
   return (

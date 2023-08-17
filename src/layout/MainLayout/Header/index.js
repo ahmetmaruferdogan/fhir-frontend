@@ -9,7 +9,7 @@ import { Avatar, Box, ButtonBase } from '@mui/material';
 // import SearchSection from './SearchSection';
 // import ProfileSection from './ProfileSection';
 // import NotificationSection from './NotificationSection';
-import LanguageChangerSection from './LanguageChangerSection';
+import LanguageChangerSection from './LanguageChanger';
 
 // assets
 import { IconMenu2 } from '@tabler/icons';

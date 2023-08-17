@@ -5,6 +5,8 @@
       "columns": {
         "czn": "Turkish Citizen Number",
         "id": "Resource id",
+        "firstName": "First name",
+        "lastName": "Last name",
         "name": "Full name",
         "gender": "Gender",
         "birthdate": "Birthdate",
@@ -14,6 +16,12 @@
     },
     "menu": {
       "title": "Patient Menu"
+    },
+    "addModal": {
+      "title": {
+        "update": "Update Patient",
+        "create": "Create Patient"
+      }
     }
   }
 }

@@ -5,7 +5,9 @@
       "columns": {
         "czn": "TC kimlik no",
         "id": "Kaynak no",
-        "name": "Tam ismi",
+        "firstName": "Ad",
+        "lastName": "Soyad",
+        "name": "Ad-Soyad",
         "gender": "Cinsiyeti",
         "birthdate": "Doğum günü",
         "telecom": "Telefon No",
@@ -14,6 +16,12 @@
     },
     "menu": {
       "title": "Hasta Menüsü"
+    },
+    "addModal": {
+      "title": {
+        "update": "Hasta Gücelle",
+        "create": "Hasta Ekle"
+      }
     }
   }
 }
