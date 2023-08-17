@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { updatePatient, createPatient, checkCznValid, setUndefinedCznValid } from 'store/patientSlicer';
 import { parseCzn } from 'utils/patients-utils';
 import { useTranslation } from 'react-i18next';
+import LocationPicker from './LocationPicker';
 const referenceDate = new Date('1900-01-01');
 const styles = {
   modal: {
@@ -38,30 +39,30 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     open: PropTypes.bool,
     onClose: PropTypes.func,
     patient: PropTypes.any,
-    genders: PropTypes.array
+    genders: PropTypes.any
   };
   useEffect(() => {
     setFormData(parsePatientDataToFormData(patient, initialFormData));
     checkCzn(patient?.resource?.id || undefined, parseCzn(patient?.resource));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patient]);
-  console.log('genders', genders);
+  // console.log('genders', genders);
   const patientSchema = yup.object().shape({
-    given: yup.string().required('First Name is required'),
-    family: yup.string().required('Last Name is required'),
+    given: yup.string().required(t('patient.addModal.errors.validations.required')),
+    family: yup.string().required(t('patient.addModal.errors.validations.required')),
     gender: yup
       .string()
       .required('Gender is required')
-      .oneOf(genders?.concept?.map((gender) => gender.code) || [], 'Gender is required'),
+      .oneOf(genders?.concept?.map((gender) => gender.code) || [], t('patient.addModal.errors.validations.required')),
     birthDate: yup
       .string()
-      .required('Birth Date is required')
-      .matches(/^\d{4}-\d{2}-\d{2}$/, 'Birth Date must be in the format "yyyy-mm-dd"'),
-    telecom: yup.string().required('Telecom is required'),
+      .required(t('patient.addModal.errors.validations.required'))
+      .matches(/^\d{4}-\d{2}-\d{2}$/, t('patient.addModal.errors.validations.birthdateFormat')),
+    telecom: yup.string().required(t('patient.addModal.errors.validations.required')),
     citizenNumber: yup
       .string()
-      .required('Citizenship number is required')
-      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, 'Citizen number is not valid!')
+      .required(t('patient.addModal.errors.validations.required'))
+      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, t('patient.addModal.errors.validations.notValid'))
     // ppn: yup.string().required('Passport number is required').matches("^[A-Z][0-9]{8}$")
   });
 
@@ -143,12 +144,12 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
       .validate(formData, { abortEarly: false })
       .then(() => {
         if (!cznValid) {
-          setFormErrors({ ...formErrors, citizenNumber: 'Citizen number already exists!' });
+          setFormErrors({ ...formErrors, citizenNumber: t('patient.addModal.errors.validations.alreadyExist') });
           return;
         }
 
         if (!birthdateIsValid(formData.birthDate)) {
-          setFormErrors({ ...formErrors, birthDate: 'Enter a valid birthdate!' });
+          setFormErrors({ ...formErrors, birthDate: t('patient.addModal.errors.validations.notValid') });
           return;
         }
 
@@ -205,7 +206,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           display: 'flex',
           flexDirection: 'column',
           '& > .MuiTextField-root': {
-            maxHeight: '30px' // Example style for the TextField subelements
+            maxHeight: '40px'
           }
         }}
       >
@@ -280,9 +281,9 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         <TextField
           name="gender"
           label={t('patient.list.columns.gender')}
+          // ref={formReferances.gender}
           select
           variant="standard"
-          // ref={formReferances.gender}
           selectprops={{
             native: true
           }}
@@ -349,9 +350,10 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           error={Boolean(formErrors.telecom)}
           helperText={formErrors.telecom}
         />
+        <LocationPicker onSelect={(a) => console.log('address return', a)} />
         <div style={styles.buttonContainer}>
           <Button variant="contained" onClick={handleClose}>
-            Cancel
+            {t('general.cancel')}
           </Button>
           <Button
             disabled={patient?.resource?.id ? cznValid === undefined : false}
@@ -359,7 +361,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
             color="primary"
             onClick={handleSave}
           >
-            Save
+            {patient ? t('general.update') : t('general.save')}
           </Button>
         </div>
       </Box>

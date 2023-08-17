@@ -1,4 +1,13 @@
 {
+  "general": {
+    "search": "Arama",
+    "save": "Kaydet",
+    "cancel": "İptal",
+    "update": "Güncelle",
+    "country": "Ülke",
+    "city": "Şehir",
+    "state": "Eyalet"
+  },
   "patient": {
     "list": {
       "title": "Hasta Listesi",
@@ -21,6 +30,21 @@
       "title": {
         "update": "Hasta Gücelle",
         "create": "Hasta Ekle"
+      },
+      "errors": {
+        "validations": {
+          "required": "Doldurulması zorunlu alan!",
+          "birthdateFormat": "'yyyy-aa-gg' formatında olması zorunludur.!",
+          "notValid": "Geçerli bir değer giriniz!",
+          "alreadyExist": "Değer zaten kayıtlı!"
+        }
+      }
+    },
+    "toast": {
+      "success": {
+        "patient": {
+          "added": "Hasta başarıyla eklendi!"
+        }
       }
     }
   }

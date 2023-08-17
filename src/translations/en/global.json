@@ -1,9 +1,18 @@
 {
+  "general": {
+    "search": "Search",
+    "save": "Save",
+    "cancel": "Cancel",
+    "update": "Update",
+    "country": "Country",
+    "city": "City",
+    "state": "State"
+  },
   "patient": {
     "list": {
       "title": "Patient List",
       "columns": {
-        "czn": "Turkish Citizen Number",
+        "czn": "Citizen Number",
         "id": "Resource id",
         "firstName": "First name",
         "lastName": "Last name",
@@ -21,6 +30,21 @@
       "title": {
         "update": "Update Patient",
         "create": "Create Patient"
+      },
+      "errors": {
+        "validations": {
+          "required": "Required!",
+          "birthdateFormat": "Must be in the format 'yyyy-mm-dd'!",
+          "notValid": "Enter a valid value!",
+          "alreadyExist": "Value already exist!"
+        }
+      }
+    },
+    "toast": {
+      "success": {
+        "patient": {
+          "added": "Patient updated successfully!"
+        }
       }
     }
   }

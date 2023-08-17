@@ -31,11 +31,7 @@ const PatientList = () => {
     if (genders.length <= 0) {
       dispatch(fetchGenders());
     }
-    console.log('genders', genders);
-    console.log('i18n', i18n);
     executeSearch();
-    // console.log('t', t);
-    // console.log('i18n', i18n);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, i18n]);
 
@@ -150,13 +146,13 @@ const PatientList = () => {
   };
 
   const columns = [
-    { id: 'czn', minWidth: 150, search: true },
-    { id: 'id', minWidth: 100, search: true },
-    { id: 'name', minWidth: 200, search: true },
-    { id: 'gender', minWidth: 100, search: true },
-    { id: 'birthdate', minWidth: 150, search: true },
-    { id: 'telecom', minWidth: 150, search: true },
-    { id: 'buttons', minWidth: 150 }
+    { id: 'czn' },
+    { id: 'id' },
+    { id: 'name' },
+    { id: 'gender' },
+    { id: 'birthdate' },
+    { id: 'telecom' },
+    { id: 'buttons' }
   ];
 
   const searchAfterParsing = useCallback((searchText) => {
@@ -223,9 +219,9 @@ const PatientList = () => {
           }
         }}
       >
-        <TextField id="search-field" label="Search" variant="outlined" onChange={onSearchChange} />
+        <TextField id="search-field" label={t('general.search')} variant="outlined" onChange={onSearchChange} disabled={loading} />
         <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
-          <AddIcon />
+          <AddIcon fontSize="small" />
         </IconButton>
       </Box>
       <TableContainer component={Paper}>
@@ -288,7 +284,7 @@ const PatientList = () => {
                         setIsModalOpen(true);
                       }}
                     >
-                      <EditIcon></EditIcon>
+                      <EditIcon fontSize="small" />
                     </IconButton>
                     <IconButton
                       key={'delete-button-of-' + patient.resource.id}
@@ -299,7 +295,7 @@ const PatientList = () => {
                         handleDeleteDialogOpen();
                       }}
                     >
-                      <DeleteIcon></DeleteIcon>
+                      <DeleteIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
                 </TableRow>
