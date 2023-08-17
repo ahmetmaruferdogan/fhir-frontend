@@ -8,6 +8,8 @@ import { Provider } from 'react-redux';
 import * as serviceWorker from 'serviceWorker';
 import App from 'App';
 import { store } from 'store';
+import { I18nextProvider } from 'react-i18next';
+import i18n from './i18n';
 
 // style + assets
 import 'assets/scss/style.scss';
@@ -20,7 +22,9 @@ const root = createRoot(container); // createRoot(container!) if you use TypeScr
 root.render(
   <Provider store={store}>
     <BrowserRouter basename={config.basename}>
-      <App />
+      <I18nextProvider i18n={i18n}>
+        <App />
+      </I18nextProvider>
     </BrowserRouter>
   </Provider>
 );

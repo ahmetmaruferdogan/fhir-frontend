@@ -18,14 +18,24 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
       return {};
     }
     newBundle = await api.nextPage({
-      bundle: oldBundle
+      bundle: oldBundle,
+      options: {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      }
     });
   } else if (searchType?.match(/^prev(ious)?$/)) {
     if (!oldBundle) {
       return {};
     }
     newBundle = await api.prevPage({
-      bundle: oldBundle
+      bundle: oldBundle,
+      options: {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      }
     });
   } else if (searchType?.match(/^self$/)) {
     const selfLink = oldBundle?.link?.find((link) => link.relation.match(/^self$/));
@@ -42,6 +52,11 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
       searchParams: {
         ...searchParams,
         _total: 'accurate'
+      },
+      options: {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       }
     };
     newBundle = await api.search(params1);
@@ -51,6 +66,11 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
       searchParams: {
         ...searchParams,
         _total: 'accurate'
+      },
+      options: {
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
       }
     };
     newBundle = await api.search(params1);
@@ -84,26 +104,27 @@ export const createPatient = createAsyncThunk('patients/createPatient', async (p
 });
 
 export const fetchGenders = createAsyncThunk('patients/fetchGenders', async () => {
-  var administrativeGenders = [];
+  // var administrativeGenders = [];
   const finalRequestBody = {
     resourceType: 'CodeSystem',
     id: 'administrative-gender'
   };
   const apiResponse = await api.read(finalRequestBody);
-  apiResponse.concept.forEach((concept) => {
-    const administrativeGender = {
-      code: concept.code,
-      display: concept.display,
-      definition: concept.definition
-    };
+  // console.log('apiResponse', apiResponse);
+  // apiResponse.concept.forEach((concept) => {
+  //   const administrativeGender = {
+  //     code: concept.code,
+  //     display: concept.display,
+  //     definition: concept.definition
+  //   };
 
-    if (concept.extension && concept.extension.length > 0) {
-      administrativeGender.comments = concept.extension[0].valueString;
-    }
+  //   if (concept.extension && concept.extension.length > 0) {
+  //     administrativeGender.comments = concept.extension[0].valueString;
+  //   }
 
-    administrativeGenders.push(administrativeGender);
-  });
-  return administrativeGenders;
+  //   administrativeGenders.push(administrativeGender);
+  // });
+  return apiResponse;
 });
 
 export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithId', async (id) => {
@@ -126,7 +147,7 @@ export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithI
 });
 
 export const checkCznValid = createAsyncThunk('patients/checkCznExist', async ({ id, czn }) => {
-  if (id === undefined || czn === undefined) return undefined;
+  if (!czn) return undefined;
   const result = api
     .search({
       resourceType,

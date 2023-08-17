@@ -6,7 +6,8 @@ import * as yup from 'yup';
 import { useDispatch, useSelector } from 'react-redux';
 import { updatePatient, createPatient, checkCznValid, setUndefinedCznValid } from 'store/patientSlicer';
 import { parsePatientDataToFormData, parseCzn } from 'utils/patients-utils';
-
+import { useTranslation } from 'react-i18next';
+const referenceDate = new Date('1900-01-01');
 const styles = {
   modal: {
     display: 'flex',
@@ -32,6 +33,8 @@ const styles = {
 const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const dispatch = useDispatch();
   const { cznValid } = useSelector((state) => state.patients);
+  const [t, i18n] = useTranslation('global');
+  t('patient.menu.title');
   AddPatientModal.propTypes = {
     open: PropTypes.bool,
     onClose: PropTypes.func,
@@ -43,11 +46,14 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     checkCzn(patient?.resource?.id || undefined, parseCzn(patient?.resource));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [patient]);
-  const gendersAsCodes = genders.map((gender) => gender.code);
+  console.log('genders', genders);
   const patientSchema = yup.object().shape({
     given: yup.string().required('First Name is required'),
     family: yup.string().required('Last Name is required'),
-    gender: yup.string().required('Gender is required').oneOf(gendersAsCodes, 'Gender is required'),
+    gender: yup
+      .string()
+      .required('Gender is required')
+      .oneOf(genders?.concept?.map((gender) => gender.code) || [], 'Gender is required'),
     birthDate: yup
       .string()
       .required('Birth Date is required')
@@ -109,15 +115,24 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     return finalRequestBody;
   };
   const citizenNumberFieldRef = useRef();
-
+  const birthdateIsValid = (date) => {
+    const parsedDate = new Date(date);
+    return Boolean(parsedDate > referenceDate);
+  };
   const handleSave = () => {
     patientSchema
       .validate(formData, { abortEarly: false })
       .then(() => {
         if (!cznValid) {
-          setFormErrors({ citizenNumber: 'Citizen number already exists!' });
+          setFormErrors({ ...formErrors, citizenNumber: 'Citizen number already exists!' });
           return;
         }
+
+        if (!birthdateIsValid(formData.birthDate)) {
+          setFormErrors({ ...formErrors, birthDate: 'Enter a valid birthdate!' });
+          return;
+        }
+
         setFormErrors({});
         const params0 = parseFormData();
         handleSavePatient(params0);
@@ -165,16 +180,24 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
 
   return (
     <Modal open={open} onClose={() => handleClose(id)} style={styles.modal}>
-      <Box style={styles.modalContent}>
+      <Box
+        style={styles.modalContent}
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          '& > .MuiTextField-root': {
+            maxHeight: '30px' // Example style for the TextField subelements
+          }
+        }}
+      >
         <Typography variant="h4" id="create-patient-modal" padding={1}>
           {patient?.resource?.id ? 'Update Patient' : 'Create Patient'}
         </Typography>
         <TextField
           name="citizenNumber"
           label="Citizen Number"
-          variant="outlined"
+          variant="standard"
           ref={citizenNumberFieldRef}
-          fullWidth
           style={styles.textField}
           value={formData.citizenNumber}
           onChange={(event) => {
@@ -196,9 +219,9 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         <TextField
           name="given"
           label="First Name"
-          variant="outlined"
+          variant="standard"
           // ref={formReferances.given}
-          fullWidth
+
           style={styles.textField}
           value={formData.given}
           onChange={(event) => {
@@ -217,9 +240,9 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         <TextField
           name="family"
           label="Last Name"
-          variant="outlined"
+          variant="standard"
           // ref={formReferances.family}
-          fullWidth
+
           style={styles.textField}
           value={formData.family}
           onChange={(event) => {
@@ -239,8 +262,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           name="gender"
           label="Gender"
           select
-          variant="outlined"
-          fullWidth
+          variant="standard"
           // ref={formReferances.gender}
           selectprops={{
             native: true
@@ -260,18 +282,18 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           error={Boolean(formErrors.gender)}
           helperText={formErrors.gender}
         >
-          {genders?.map((option) => (
+          {genders?.concept?.map((option) => (
             <MenuItem key={option.code} value={option.code}>
-              {option.display}
+              {option?.designation?.filter((element) => element.language === i18n.language)[0]?.value || ''}
             </MenuItem>
           ))}
         </TextField>
         <TextField
           name="birthDate"
           label="BirthDate"
-          variant="outlined"
+          variant="standard"
           // ref={formReferances.birthDate}
-          fullWidth
+
           style={styles.textField}
           value={formData.birthDate}
           onChange={(event) => {
@@ -290,9 +312,9 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
         <TextField
           name="telecom"
           label="Telecom"
-          variant="outlined"
+          variant="standard"
           // ref={formReferances.telecom}
-          fullWidth
+
           style={styles.textField}
           value={formData.telecom}
           onChange={(event) => {
@@ -312,7 +334,12 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           <Button variant="contained" onClick={handleClose}>
             Cancel
           </Button>
-          <Button disabled={cznValid === undefined} variant="contained" color="primary" onClick={handleSave}>
+          <Button
+            disabled={patient?.resource?.id ? cznValid === undefined : false}
+            variant="contained"
+            color="primary"
+            onClick={handleSave}
+          >
             Save
           </Button>
         </div>

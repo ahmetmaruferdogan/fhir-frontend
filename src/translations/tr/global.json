@@ -1,0 +1,19 @@
+{
+  "patient": {
+    "list": {
+      "title": "Hasta Listesi",
+      "columns": {
+        "czn": "TC kimlik no",
+        "id": "Kaynak no",
+        "name": "Tam ismi",
+        "gender": "Cinsiyeti",
+        "birthdate": "Doğum günü",
+        "telecom": "Telefon No",
+        "buttons": ""
+      }
+    },
+    "menu": {
+      "title": "Hasta Menüsü"
+    }
+  }
+}

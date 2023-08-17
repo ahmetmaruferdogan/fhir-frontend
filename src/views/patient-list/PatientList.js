@@ -1,5 +1,5 @@
 import { fetchPatients, deletePatientWithId, fetchGenders } from '../../store/patientSlicer';
-import { React, useEffect, useRef, useState } from 'react';
+import { React, useCallback, useEffect, useMemo, useState } from 'react';
 import { parseCzn, parseName, prevPageExists, nextPageExists } from '../../utils/patients-utils';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -10,27 +10,33 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, Button, IconButton, TablePagination } from '@mui/material';
+import { Box, Button, IconButton, TablePagination, debounce } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useDispatch, useSelector } from 'react-redux';
 import AddPatientModal from './AddPatientModal';
 import { toast } from 'react-toastify';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
-import SkeletonPatientList from './skeleton/SkeletonPatientList';
+// import SkeletonPatientList from './skeleton/SkeletonPatientList';
 import EditIcon from '@mui/icons-material/Edit';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import SearchIcon from '@mui/icons-material/Search';
+// import RefreshIcon from '@mui/icons-material/Refresh';
+// import SearchIcon from '@mui/icons-material/Search';
+import { useTranslation } from 'react-i18next';
 
 const PatientList = () => {
   const dispatch = useDispatch();
+  const [t, i18n] = useTranslation('global');
   const { bundle, loading, genders } = useSelector((state) => state.patients);
+
   useEffect(() => {
     if (genders.length <= 0) {
       dispatch(fetchGenders());
     }
+    console.log('genders', genders);
     executeSearch();
+    // console.log('t', t);
+    // console.log('i18n', i18n);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dispatch]);
+  }, [dispatch, i18n]);
 
   const executeSearch = (params0) => {
     params0 = { ...params0, bundle };
@@ -38,11 +44,11 @@ const PatientList = () => {
   };
 
   const [editedPatient, setEditedPatient] = useState({ id: undefined });
-  const textInputRefs = useRef({});
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  const [searchParams, setSearchParams] = useState({});
+  // const [searchParams, setSearchParams] = useState({});
+  // const [searchText, setSearchText] = useState('');
 
   const deletePatient = (patients) => {
     if (!patients) {
@@ -73,9 +79,9 @@ const PatientList = () => {
       bundle: {},
       searchParams: searchParameters
     });
-    setSearchParams({});
+    // setSearchParams({});´
+    // setSearchText('');
     setCurrentPage(0);
-    Object.values(textInputRefs.current).forEach((ref) => (ref.value = ''));
   };
 
   const handleOpenAddPatientModal = () => {
@@ -143,18 +149,38 @@ const PatientList = () => {
   };
 
   const columns = [
-    { id: 'czn', label: 'Citizen Number', minWidth: 150, search: true },
-    { id: 'id', label: 'id', minWidth: 100, search: true },
-    { id: 'name', label: 'Full Name', minWidth: 200, search: true },
-    { id: 'gender', label: 'Gender', minWidth: 100, search: true },
-    { id: 'birthdate', label: 'Birthdate', minWidth: 150, search: true },
-    { id: 'telecom', label: 'Telecom', minWidth: 150, search: true },
-    { id: 'buttons', label: '', minWidth: 150 }
+    { id: 'czn', minWidth: 150, search: true },
+    { id: 'id', minWidth: 100, search: true },
+    { id: 'name', minWidth: 200, search: true },
+    { id: 'gender', minWidth: 100, search: true },
+    { id: 'birthdate', minWidth: 150, search: true },
+    { id: 'telecom', minWidth: 150, search: true },
+    { id: 'buttons', minWidth: 150 }
   ];
 
-  return loading ? (
-    <SkeletonPatientList></SkeletonPatientList>
-  ) : (
+  const searchAfterParsing = useCallback((searchText) => {
+    handleSearchWithParams({ name: searchText });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const debounceOnChange = useMemo(() => {
+    return debounce(searchAfterParsing, 1000);
+  }, [searchAfterParsing]);
+
+  const onSearchChange = (event) => {
+    // setSearchParams({ ...searchParams, [column.id]: event.target.value });
+    // setSearchText(event.target.value);
+    // handleSearchWithParams({ ...searchParams, [column.id]: event.target.value });
+    debounceOnChange(event.target.value);
+  };
+
+  const getGenderValueBasedOnLanguage = (gender) => {
+    return genders?.concept
+      ?.filter((element) => element.code === gender)[0]
+      ?.designation.filter((element1) => element1.language === i18n.language)[0].value;
+  };
+
+  return (
     <div>
       <Dialog
         key="delete-dialog"
@@ -183,82 +209,99 @@ const PatientList = () => {
         patient={editedPatient}
         genders={genders}
       ></AddPatientModal>
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'row',
+          minWidth: '100%',
+          '& > .MuiIconButton-root': {
+            marginLeft: 'auto'
+          }
+        }}
+      >
+        <TextField id="search-field" label="Search" variant="outlined" onChange={onSearchChange} />
+        <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
+          <AddIcon />
+        </IconButton>
+      </Box>
       <TableContainer component={Paper}>
         <Table aria-label="Patients">
           <TableHead>
             <TableRow>
-              {columns.map((column) =>
-                column.search ? (
-                  <TableCell key={column.id} align={column.align}>
-                    {column.label}
-                    <TextField
-                      id={column.id + '-search-field'}
-                      label={'Search for ' + column.label}
-                      variant="outlined"
-                      onChange={(event) => {
-                        setSearchParams({ ...searchParams, [column.id]: event.target.value });
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter') {
-                          handleSearchWithParams(searchParams);
-                        }
-                      }}
-                    />
-                  </TableCell>
-                ) : (
-                  <TableCell key={column.id}>
-                    <Box>
-                      <IconButton key="searc-button" onClick={() => handleSearchWithParams(searchParams)}>
-                        <SearchIcon />
-                      </IconButton>
-                      <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
-                        <AddIcon />
-                      </IconButton>
-                      <IconButton key="refresh-button" onClick={() => handleSearchWithParams(searchParams)}>
-                        <RefreshIcon />
-                      </IconButton>
-                    </Box>
-                  </TableCell>
-                )
-              )}
+              {columns.map((column) => (
+                // !column.search ? (
+                //   <TableCell key={column.id}>
+                //     <Box>
+                //       {/* <IconButton key="search-button" onClick={() => handleSearchWithParams(sear)}>
+                //         <SearchIcon />
+                //       </IconButton> */}
+                //       {/* <IconButton key="refresh-button" onClick={() => handleSearchWithParams(searchParams)}>
+                //         <RefreshIcon />
+                //       </IconButton> */}
+                //     </Box>
+                //   </TableCell>
+                // ) :
+                <TableCell
+                  key={column.id}
+                  align={column.align}
+                  sx={{
+                    textAlign: 'center'
+                  }}
+                >
+                  {t('patient.list.columns.' + column.id)}
+                </TableCell>
+              ))}
             </TableRow>
           </TableHead>
-          <TableBody>
-            {bundle?.entry?.map((patient) => (
-              <TableRow key={patient.resource.id}>
-                <TableCell>{parseCzn(patient.resource)}</TableCell>
-                <TableCell>{patient.resource.id || '-'}</TableCell>
-                <TableCell>{parseName(patient.resource)}</TableCell>
-                <TableCell>{patient.resource.gender || '-'}</TableCell>
-                <TableCell>{patient.resource.birthDate || '-'}</TableCell>
-                <TableCell>{patient.resource.telecom?.[0]?.value || '-'}</TableCell>
-                <TableCell>
-                  <IconButton
-                    key={'edit-button-of-' + patient.resource.id}
-                    aria-label="edit"
-                    variant="warn"
-                    onClick={() => {
-                      setEditedPatient(patient);
-                      setIsModalOpen(true);
-                    }}
-                  >
-                    <EditIcon></EditIcon>
-                  </IconButton>
-                  <IconButton
-                    key={'delete-button-of-' + patient.resource.id}
-                    aria-label="delete"
-                    variant="error"
-                    onClick={() => {
-                      setEditedPatient(patient);
-                      handleDeleteDialogOpen();
-                    }}
-                  >
-                    <DeleteIcon></DeleteIcon>
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
+          {loading ? (
+            <TableBody></TableBody>
+          ) : (
+            <TableBody>
+              {bundle?.entry?.map((patient) => (
+                <TableRow
+                  key={patient.resource.id}
+                  sx={{
+                    height: '10px',
+                    '& > td': {
+                      padding: '1px',
+                      textAlign: 'center'
+                    }
+                  }}
+                >
+                  <TableCell>{parseCzn(patient.resource)}</TableCell>
+                  <TableCell>{patient.resource.id || '-'}</TableCell>
+                  <TableCell>{parseName(patient.resource)}</TableCell>
+                  <TableCell>{getGenderValueBasedOnLanguage(patient.resource.gender) || '-'}</TableCell>
+                  <TableCell>{patient.resource.birthDate || '-'}</TableCell>
+                  <TableCell>{patient.resource.telecom?.[0]?.value || '-'}</TableCell>
+                  <TableCell>
+                    <IconButton
+                      key={'edit-button-of-' + patient.resource.id}
+                      aria-label="edit"
+                      variant="warn"
+                      onClick={() => {
+                        setEditedPatient(patient);
+                        setIsModalOpen(true);
+                      }}
+                    >
+                      <EditIcon></EditIcon>
+                    </IconButton>
+                    <IconButton
+                      key={'delete-button-of-' + patient.resource.id}
+                      aria-label="delete"
+                      variant="error"
+                      onClick={() => {
+                        setEditedPatient(patient);
+                        handleDeleteDialogOpen();
+                      }}
+                    >
+                      <DeleteIcon></DeleteIcon>
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          )}
         </Table>
         <TablePagination
           component="div"

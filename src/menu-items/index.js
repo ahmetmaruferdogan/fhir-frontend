@@ -1,4 +1,4 @@
-import dashboard from './dashboard';
+// import dashboard from './dashboard';
 import patientTabs from './patientTabs';
 // import pages from './pages';
 // import utilities from './utilities';
@@ -7,7 +7,10 @@ import patientTabs from './patientTabs';
 // ==============================|| MENU ITEMS ||============================== //
 
 const menuItems = {
-  items: [dashboard, patientTabs]
+  items: [
+    // dashboard,
+    patientTabs()
+  ]
 };
 
 export default menuItems;

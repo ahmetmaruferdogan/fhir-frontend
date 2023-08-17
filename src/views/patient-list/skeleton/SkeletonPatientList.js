@@ -11,12 +11,7 @@ for (let index = 0; index < 10; index++) {
 }
 
 const SkeletonPatientList = () => {
-  return (
-    <Stack spacing={1}>
-      <Skeleton variant="rounded" width={210} height={60} />
-      {arr.map((element) => element)}
-    </Stack>
-  );
+  return <Stack spacing={1}>{arr.map((element) => element)}</Stack>;
 };
 
 export default SkeletonPatientList;
