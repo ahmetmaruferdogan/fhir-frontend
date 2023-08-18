@@ -95,7 +95,7 @@ export const objectifyString = (input1) => {
   if (matches) {
     matches.forEach((match) => {
       const [, key, value] = match.match(/"([^"]+):([^"]+)"/);
-      console.log(key, value);
+      // console.log(key, value);
       result[key] = value;
     });
     var name1 = '';
@@ -108,6 +108,6 @@ export const objectifyString = (input1) => {
   }
   if (name1) result.name = name1.replace(/\s{2,}/g, ' ');
 
-  console.log('result', result);
+  // console.log('result', result);
   return result;
 };

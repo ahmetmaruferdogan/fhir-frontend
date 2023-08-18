@@ -24,6 +24,8 @@ import { useTranslation } from 'react-i18next';
 import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import LocationPicker from './LocationPicker';
 
+const debounceDelay = 1000;
+
 const PatientList = () => {
   const dispatch = useDispatch();
   const [t, i18n] = useTranslation('global');
@@ -33,6 +35,10 @@ const PatientList = () => {
     if (genders.length <= 0) {
       dispatch(fetchGenders());
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [genders]);
+
+  useEffect(() => {
     executeSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch, i18n]);
@@ -61,7 +67,7 @@ const PatientList = () => {
   };
 
   const parseSearchInputToParams = (searchParams0) => {
-    console.log('params', searchParams0);
+    // console.log('params', searchParams0);
     let result = {};
     if (searchParams0.name) result.name = searchParams0.name.trim().split(' ');
     if (searchParams0.id) result._id = searchParams0.id;
@@ -169,7 +175,7 @@ const PatientList = () => {
   }, []);
 
   const debounceOnChange = useMemo(() => {
-    return debounce(searchAfterParsing, 1000);
+    return debounce(searchAfterParsing, debounceDelay);
   }, [searchAfterParsing]);
 
   const onSearchChange = (event) => {
@@ -371,7 +377,7 @@ const PatientList = () => {
                     }
                   }}
                 >
-                  <TableCell>{parseCzn(patient.resource)}</TableCell>
+                  <TableCell>{parseCzn(patient.resource) || '-'}</TableCell>
                   <TableCell>{patient.resource.id || '-'}</TableCell>
                   <TableCell>{parseName(patient.resource)}</TableCell>
                   <TableCell>{getGenderValueBasedOnLanguage(patient.resource.gender) || '-'}</TableCell>

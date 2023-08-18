@@ -100,7 +100,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     result.citizenNumber = parseCzn(patientData?.resource);
     const addressVariable =
       patientData?.resource?.address?.filter((element) => element?.use === 'home' && element?.type === 'physical')[0] || undefined;
-    console.log('patient', patientData);
+    // console.log('patient', patientData);
     if (addressVariable) {
       // console.log('address parsed');
       result.country = addressVariable.country;
@@ -224,7 +224,9 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   };
 
   const handleAddressSelect = (addressParams) => {
-    setFormData({ ...formData, country: addressParams.country.name, state: addressParams.state.name, city: addressParams.city.name });
+    if (addressParams.country) setFormData({ ...formData, country: addressParams.country.name });
+    if (addressParams.state) setFormData({ ...formData, state: addressParams.state.name });
+    if (addressParams.city) setFormData({ ...formData, city: addressParams.city.name });
   };
 
   return (
@@ -379,7 +381,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           error={Boolean(formErrors.telecom)}
           helperText={formErrors.telecom}
         />
-        <LocationPicker onSelect={handleAddressSelect} errors={formErrors} data={formData} />
+        <LocationPicker onSelect={handleAddressSelect} errors={formErrors} data={formData} dynamicReturn={true} />
         <div style={styles.buttonContainer}>
           <Button variant="contained" onClick={handleClose}>
             {t('general.cancel')}

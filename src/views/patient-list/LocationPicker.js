@@ -94,7 +94,10 @@ const LocationPicker = ({ onSelect, errors, data, disabled, dynamicReturn }) => 
           native: true
         }}
         sx={{ width: 100 }}
-        onChange={(event) => handleCountryChange(event.target.value)}
+        onChange={(event) => {
+          if (errors) errors.country = '';
+          handleCountryChange(event.target.value);
+        }}
         label={t('general.country')}
         error={Boolean(errors?.country)}
         helperText={errors?.country}
@@ -116,7 +119,10 @@ const LocationPicker = ({ onSelect, errors, data, disabled, dynamicReturn }) => 
           native: true
         }}
         sx={{ width: 100 }}
-        onChange={(event) => handleStateChange(event.target.value)}
+        onChange={(event) => {
+          if (errors) errors.state = '';
+          handleStateChange(event.target.value);
+        }}
         label={t('general.state')}
         error={Boolean(errors?.state)}
         helperText={errors?.state}
@@ -138,7 +144,10 @@ const LocationPicker = ({ onSelect, errors, data, disabled, dynamicReturn }) => 
           native: true
         }}
         sx={{ width: 100 }}
-        onChange={(event) => handleCityChange(event.target.value)}
+        onChange={(event) => {
+          if (errors) errors.city = '';
+          handleCityChange(event.target.value);
+        }}
         label={t('general.city')}
         error={Boolean(errors?.city)}
         helperText={errors?.city}
