@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 // material-ui
 import { useTheme } from '@mui/material/styles';
 import { Avatar, Box, ButtonBase } from '@mui/material';
+import LanguageIcon from '@mui/icons-material/Language';
 
 // project imports
 import LogoSection from '../LogoSection';
@@ -62,6 +63,7 @@ const Header = ({ handleLeftDrawerToggle }) => {
       <Box sx={{ flexGrow: 1 }} />
 
       {/* notification & profile */}
+      <LanguageIcon></LanguageIcon>
       <LanguageChangerSection />
       {/* <NotificationSection />
       <ProfileSection /> */}

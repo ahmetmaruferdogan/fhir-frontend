@@ -14,6 +14,7 @@ const LanguageChangerSection = () => {
         i18n.changeLanguage(event.target.value);
       }}
       variant="standard"
+      sx={{ borderRadius: '20%', objectFit: 'cover' }}
     >
       <MenuItem key="en" value="en">
         EN
