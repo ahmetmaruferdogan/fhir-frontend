@@ -85,3 +85,29 @@ export const prevPageExists = (oldBundle) => {
   const prevLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^prev(ious)?$/));
   return prevLinkObject ? true : false;
 };
+
+export const objectifyString = (input1) => {
+  var input = input1;
+  const regex = /"([^"]+):([^"]+)"/g;
+  const matches = input.match(regex);
+  const result = {};
+
+  if (matches) {
+    matches.forEach((match) => {
+      const [, key, value] = match.match(/"([^"]+):([^"]+)"/);
+      console.log(key, value);
+      result[key] = value;
+    });
+    var name1 = '';
+    const remaining = input.replace(regex, '').trim();
+    if (remaining !== '') {
+      name1 = remaining;
+    }
+  } else {
+    name1 = input.trim();
+  }
+  if (name1) result.name = name1.replace(/\s{2,}/g, ' ');
+
+  console.log('result', result);
+  return result;
+};

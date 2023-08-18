@@ -19,6 +19,7 @@
         "name": "Ad-Soyad",
         "gender": "Cinsiyeti",
         "birthdate": "Doğum günü",
+        "birthDate": "Doğum günü",
         "telecom": "Telefon No",
         "buttons": ""
       }

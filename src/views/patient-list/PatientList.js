@@ -1,6 +1,6 @@
 import { fetchPatients, deletePatientWithId, fetchGenders } from '../../store/patientSlicer';
 import { React, useCallback, useEffect, useMemo, useState } from 'react';
-import { parseCzn, parseName, prevPageExists, nextPageExists } from '../../utils/patients-utils';
+import { parseCzn, parseName, prevPageExists, nextPageExists, objectifyString } from '../../utils/patients-utils';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -10,7 +10,7 @@ import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Box, Button, IconButton, TablePagination, debounce } from '@mui/material';
+import { Box, Button, Grid, IconButton, MenuItem, Stack, TablePagination, debounce } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import { useDispatch, useSelector } from 'react-redux';
 import AddPatientModal from './AddPatientModal';
@@ -19,8 +19,10 @@ import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } 
 // import SkeletonPatientList from './skeleton/SkeletonPatientList';
 import EditIcon from '@mui/icons-material/Edit';
 // import RefreshIcon from '@mui/icons-material/Refresh';
-// import SearchIcon from '@mui/icons-material/Search';
+import SearchIcon from '@mui/icons-material/Search';
 import { useTranslation } from 'react-i18next';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
+import LocationPicker from './LocationPicker';
 
 const PatientList = () => {
   const dispatch = useDispatch();
@@ -45,7 +47,6 @@ const PatientList = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
   // const [searchParams, setSearchParams] = useState({});
-  // const [searchText, setSearchText] = useState('');
 
   const deletePatient = (patients) => {
     if (!patients) {
@@ -60,13 +61,17 @@ const PatientList = () => {
   };
 
   const parseSearchInputToParams = (searchParams0) => {
+    console.log('params', searchParams0);
     let result = {};
-    if (searchParams0.name) result.name = searchParams0.name;
+    if (searchParams0.name) result.name = searchParams0.name.trim().split(' ');
     if (searchParams0.id) result._id = searchParams0.id;
     if (searchParams0.gender) result.gender = searchParams0.gender;
     if (searchParams0.birthdate) result.birthdate = searchParams0.birthdate;
     if (searchParams0.telecom) result._content = searchParams0.telecom;
     if (searchParams0.czn) result.identifier = searchParams0.czn;
+    if (searchParams0.country) result['address-country'] = searchParams0.country;
+    if (searchParams0.state) result['address-state'] = searchParams0.state;
+    if (searchParams0.city) result['address-city'] = searchParams0.city;
     return result;
   };
 
@@ -146,17 +151,20 @@ const PatientList = () => {
   };
 
   const columns = [
-    { id: 'czn' },
-    { id: 'id' },
-    { id: 'name' },
-    { id: 'gender' },
-    { id: 'birthdate' },
-    { id: 'telecom' },
+    { id: 'czn', search: true },
+    { id: 'id', search: true },
+    { id: 'name', search: true },
+    { id: 'gender', search: true },
+    { id: 'birthdate', search: true },
+    { id: 'telecom', search: true },
     { id: 'buttons' }
   ];
 
+  const searchColumns = [{ id: 'czn' }, { id: 'id' }, { id: 'birthDate' }, { id: 'telecom' }];
+
   const searchAfterParsing = useCallback((searchText) => {
-    handleSearchWithParams({ name: searchText });
+    var searchParameters0 = objectifyString(searchText);
+    handleSearchWithParams(searchParameters0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -166,9 +174,9 @@ const PatientList = () => {
 
   const onSearchChange = (event) => {
     // setSearchParams({ ...searchParams, [column.id]: event.target.value });
-    // setSearchText(event.target.value);
+    setMainSearchText(event.target.value);
     // handleSearchWithParams({ ...searchParams, [column.id]: event.target.value });
-    debounceOnChange(event.target.value);
+    if (!advancedSearchOpen) debounceOnChange(event.target.value);
   };
 
   const getGenderValueBasedOnLanguage = (gender) => {
@@ -178,6 +186,29 @@ const PatientList = () => {
       genderConceptObject?.display ||
       undefined
     );
+  };
+
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
+  const [searchData, setSearchData] = useState({});
+  const [mainSearchText, setMainSearchText] = useState('');
+
+  const handleSwitchAdvancedFilter = () => {
+    setAdvancedSearchOpen(!advancedSearchOpen);
+  };
+
+  const handleCloseAdvancedFilter = () => {
+    setAdvancedSearchOpen(false);
+  };
+
+  const handleAdvancedSearch = () => {
+    let newSearchText = mainSearchText + ' ';
+    for (const [key, value] of Object.entries(searchData)) {
+      newSearchText += '"' + key + ':' + value + '" ';
+    }
+    searchAfterParsing(newSearchText);
+    setMainSearchText(newSearchText);
+    setSearchData({});
+    handleCloseAdvancedFilter();
   };
 
   return (
@@ -209,21 +240,93 @@ const PatientList = () => {
         patient={editedPatient}
         genders={genders}
       ></AddPatientModal>
-      <Box
-        sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          minWidth: '100%',
-          '& > .MuiIconButton-root': {
-            marginLeft: 'auto'
-          }
-        }}
-      >
-        <TextField id="search-field" label={t('general.search')} variant="outlined" onChange={onSearchChange} disabled={loading} />
-        <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal}>
-          <AddIcon fontSize="small" />
-        </IconButton>
-      </Box>
+      <Stack direction="column">
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            minWidth: '100%'
+          }}
+        >
+          <TextField
+            id="search-field"
+            label={t('general.search')}
+            variant="outlined"
+            // ref={mainSearchRef}
+            onChange={onSearchChange}
+            disabled={loading}
+            value={mainSearchText}
+            sx={{ width: 200 }}
+          />
+          <IconButton key="advanced-filter-button" onClick={handleSwitchAdvancedFilter}>
+            <FilterAltIcon fontSize="small" />
+          </IconButton>
+          {advancedSearchOpen ? (
+            <IconButton key="advanced-search-button" onClick={handleAdvancedSearch}>
+              <SearchIcon fontSize="small"></SearchIcon>
+            </IconButton>
+          ) : (
+            <></>
+          )}
+          <IconButton key="add-patient-button" onClick={handleOpenAddPatientModal} sx={{ marginLeft: 'auto' }}>
+            <AddIcon fontSize="small" />
+          </IconButton>
+        </Box>
+        {advancedSearchOpen ? (
+          <Grid container>
+            {searchColumns?.map((column) => (
+              <Grid item xs={12} sm={6} md={4} lg={3} key={column.id}>
+                <TextField
+                  key={column.id + '-search-field'}
+                  label={t('patient.list.columns.' + column.id)}
+                  variant="standard"
+                  disabled={loading}
+                  sx={{ width: 200 }}
+                  onChange={(event) => {
+                    setSearchData({ ...searchData, [column.id]: event.target.value });
+                  }}
+                />
+              </Grid>
+            ))}
+            <Grid item xs={12} sm={6} md={4} lg={3} key="advanced-search-button-grid">
+              <LocationPicker
+                onSelect={(data) => {
+                  if (data.country) setSearchData({ ...searchData, country: data.country.name });
+                  if (data.state) setSearchData({ ...searchData, state: data.state.name });
+                  if (data.city) setSearchData({ ...searchData, city: data.city.name });
+                }}
+                disabled={loading}
+                dynamicReturn={true}
+              ></LocationPicker>
+            </Grid>
+            <Grid sx={{ alignItems: 'center' }} item xs={12} sm={6} md={4} lg={3} key="advanced-gender-search">
+              <TextField
+                disabled={loading}
+                sx={{ width: 100 }}
+                name="gender-search"
+                label={t('patient.list.columns.gender')}
+                select
+                variant="standard"
+                value={searchData?.gender || ''}
+                selectprops={{
+                  native: true
+                }}
+                onChange={(event) => {
+                  setSearchData({ ...searchData, gender: event.target.value });
+                }}
+              >
+                {genders?.concept?.map((option) => (
+                  <MenuItem key={option.code} value={option.code}>
+                    {option?.designation?.filter((element) => element.language === i18n.language)[0]?.value || option?.display || ''}
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
+          </Grid>
+        ) : (
+          <></>
+        )}
+      </Stack>
       <TableContainer component={Paper}>
         <Table aria-label="Patients">
           <TableHead>

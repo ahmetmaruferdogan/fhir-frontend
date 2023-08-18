@@ -62,7 +62,10 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     citizenNumber: yup
       .string()
       .required(t('patient.addModal.errors.validations.required'))
-      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, t('patient.addModal.errors.validations.notValid'))
+      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, t('patient.addModal.errors.validations.notValid')),
+    country: yup.string().required(t('patient.addModal.errors.validations.required')),
+    state: yup.string().required(t('patient.addModal.errors.validations.required')),
+    city: yup.string().required(t('patient.addModal.errors.validations.required'))
     // ppn: yup.string().required('Passport number is required').matches("^[A-Z][0-9]{8}$")
   });
 
@@ -73,6 +76,9 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     birthDate: '',
     telecom: '',
     citizenNumber: '',
+    country: '',
+    state: '',
+    city: '',
     id: undefined
   };
 
@@ -92,6 +98,15 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     result.birthDate = patientData?.resource?.birthDate || '';
     result.telecom = patientData?.resource?.telecom?.filter((element) => element?.system === 'phone')[0]?.value || '';
     result.citizenNumber = parseCzn(patientData?.resource);
+    const addressVariable =
+      patientData?.resource?.address?.filter((element) => element?.use === 'home' && element?.type === 'physical')[0] || undefined;
+    console.log('patient', patientData);
+    if (addressVariable) {
+      // console.log('address parsed');
+      result.country = addressVariable.country;
+      result.state = addressVariable.state;
+      result.city = addressVariable.city;
+    }
     return result;
   };
 
@@ -111,7 +126,8 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
       name: undefined,
       gender: undefined,
       birthDate: undefined,
-      telecom: undefined
+      telecom: undefined,
+      address: undefined
     };
     finalRequestBody.id = formData.id;
     finalRequestBody.name = [{ given: formData.given.split(' '), family: formData.family }];
@@ -130,6 +146,15 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           ]
         },
         value: formData.citizenNumber
+      }
+    ];
+    finalRequestBody.address = [
+      {
+        use: 'home',
+        type: 'physical',
+        country: formData.country,
+        state: formData.state,
+        city: formData.city
       }
     ];
     return finalRequestBody;
@@ -196,6 +221,10 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     if (cznValid === undefined) {
       dispatch(checkCznValid({ id, czn }));
     }
+  };
+
+  const handleAddressSelect = (addressParams) => {
+    setFormData({ ...formData, country: addressParams.country.name, state: addressParams.state.name, city: addressParams.city.name });
   };
 
   return (
@@ -350,7 +379,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           error={Boolean(formErrors.telecom)}
           helperText={formErrors.telecom}
         />
-        <LocationPicker onSelect={(a) => console.log('address return', a)} />
+        <LocationPicker onSelect={handleAddressSelect} errors={formErrors} data={formData} />
         <div style={styles.buttonContainer}>
           <Button variant="contained" onClick={handleClose}>
             {t('general.cancel')}
@@ -361,7 +390,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
             color="primary"
             onClick={handleSave}
           >
-            {patient ? t('general.update') : t('general.save')}
+            {patient?.resource?.id ? t('general.update') : t('general.save')}
           </Button>
         </div>
       </Box>

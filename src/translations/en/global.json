@@ -19,6 +19,7 @@
         "name": "Full name",
         "gender": "Gender",
         "birthdate": "Birthdate",
+        "birthDate": "Birthdate",
         "telecom": "Phone number",
         "buttons": ""
       }

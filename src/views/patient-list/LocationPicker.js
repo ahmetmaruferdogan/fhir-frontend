@@ -1,12 +1,19 @@
-import { MenuItem, TextField } from '@mui/material';
+import { Divider, MenuItem, TextField } from '@mui/material';
 import { Country, State, City } from 'country-state-city';
 import { Stack } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
-const LocationPicker = ({ onSelect }) => {
-  LocationPicker.propTypes = { onSelect: PropTypes.func };
+const LocationPicker = ({ onSelect, errors, data, disabled, dynamicReturn }) => {
+  LocationPicker.propTypes = {
+    onSelect: PropTypes.func,
+    errors: PropTypes.any,
+    data: PropTypes.any,
+    disabled: PropTypes.bool,
+    dynamicReturn: PropTypes.bool
+  };
+
   const [t] = useTranslation('global');
 
   const [selectedCountry, setSelectedCountry] = useState(undefined);
@@ -33,19 +40,38 @@ const LocationPicker = ({ onSelect }) => {
   };
 
   useEffect(() => {
+    const countryList = [...Country.getAllCountries()];
+    const tempCountry = countryList?.filter((country) => country?.name === data?.country)[0] || undefined;
+    setSelectedCountry(tempCountry);
+
+    const stateList = [...State.getStatesOfCountry(tempCountry?.isoCode)];
+    const tempState = stateList?.filter((state) => state.name === data?.state)[0] || undefined;
+    setSelectedState(tempState);
+
+    const cityList = [...City.getCitiesOfState(tempCountry?.isoCode, tempState?.isoCode)];
+    const tempCity = cityList?.filter((city) => city.name === data?.city)[0] || undefined;
+    setSelectedCity(tempCity);
+  }, [data]);
+
+  useEffect(() => {
     if (selectedCountry) {
       setStates(State.getStatesOfCountry(selectedCountry?.isoCode));
+      if (dynamicReturn) onSelect({ country: selectedCountry });
     } else {
       setStates(undefined);
+      setCities(undefined);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry]);
 
   useEffect(() => {
     if (selectedCountry && selectedState) {
       setCities(City.getCitiesOfState(selectedCountry?.isoCode, selectedState?.isoCode));
+      if (dynamicReturn) onSelect({ country: selectedCountry, state: selectedState });
     } else {
       setCities(undefined);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedCountry, selectedState]);
 
   useEffect(() => {
@@ -56,8 +82,9 @@ const LocationPicker = ({ onSelect }) => {
   }, [selectedCountry, selectedState, selectedCity]);
 
   return (
-    <Stack direction="row" spacing={2}>
+    <Stack direction="row" spacing={1}>
       <TextField
+        disabled={disabled}
         name={t('general.country')}
         value={selectedCountry || ''}
         id="countries-combobox"
@@ -66,9 +93,11 @@ const LocationPicker = ({ onSelect }) => {
         selectprops={{
           native: true
         }}
-        sx={{ width: 200 }}
+        sx={{ width: 100 }}
         onChange={(event) => handleCountryChange(event.target.value)}
         label={t('general.country')}
+        error={Boolean(errors?.country)}
+        helperText={errors?.country}
       >
         {countries?.map((country) => (
           <MenuItem key={country.isoCode} value={country}>
@@ -78,7 +107,7 @@ const LocationPicker = ({ onSelect }) => {
       </TextField>
       <TextField
         value={selectedState || ''}
-        disabled={!states}
+        disabled={disabled || !states}
         name={t('general.state')}
         id="states-combobox"
         select
@@ -86,9 +115,11 @@ const LocationPicker = ({ onSelect }) => {
         selectprops={{
           native: true
         }}
-        sx={{ width: 200 }}
+        sx={{ width: 100 }}
         onChange={(event) => handleStateChange(event.target.value)}
         label={t('general.state')}
+        error={Boolean(errors?.state)}
+        helperText={errors?.state}
       >
         {states?.map((state) => (
           <MenuItem key={state.isoCode} value={state}>
@@ -98,7 +129,7 @@ const LocationPicker = ({ onSelect }) => {
       </TextField>
       <TextField
         value={selectedCity || ''}
-        disabled={!cities}
+        disabled={disabled || !cities}
         name={t('general.city')}
         id="cities-combobox"
         select
@@ -106,9 +137,11 @@ const LocationPicker = ({ onSelect }) => {
         selectprops={{
           native: true
         }}
-        sx={{ width: 200 }}
+        sx={{ width: 100 }}
         onChange={(event) => handleCityChange(event.target.value)}
         label={t('general.city')}
+        error={Boolean(errors?.city)}
+        helperText={errors?.city}
       >
         {cities?.map((city) => (
           <MenuItem key={city.name} value={city}>
@@ -116,6 +149,7 @@ const LocationPicker = ({ onSelect }) => {
           </MenuItem>
         ))}
       </TextField>
+      <Divider />
     </Stack>
   );
 };
