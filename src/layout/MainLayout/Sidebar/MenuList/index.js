@@ -20,6 +20,12 @@ const MenuList = () => {
         title: t('patient.list.title'),
         type: 'item',
         url: '/patient/patients'
+      },
+      {
+        id: 'appointmentList',
+        title: t('appointment.list.title'),
+        type: 'item',
+        url: 'appointment/appointments'
       }
     ]
   };

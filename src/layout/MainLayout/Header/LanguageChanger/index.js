@@ -10,7 +10,7 @@ const LanguageChangerSection = () => {
       select
       defaultValue={i18n.language}
       onChange={(event) => {
-        console.log('event.target', event.target);
+        // console.log('event.target', event.target);
         i18n.changeLanguage(event.target.value);
       }}
       variant="standard"

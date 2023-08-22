@@ -6,14 +6,6 @@ import { useTranslation } from 'react-i18next';
 import PropTypes from 'prop-types';
 
 const LocationPicker = ({ onSelect, errors, data, disabled, dynamicReturn }) => {
-  LocationPicker.propTypes = {
-    onSelect: PropTypes.func,
-    errors: PropTypes.any,
-    data: PropTypes.any,
-    disabled: PropTypes.bool,
-    dynamicReturn: PropTypes.bool
-  };
-
   const [t] = useTranslation('global');
 
   const [selectedCountry, setSelectedCountry] = useState(undefined);
@@ -161,6 +153,14 @@ const LocationPicker = ({ onSelect, errors, data, disabled, dynamicReturn }) => 
       <Divider />
     </Stack>
   );
+};
+
+LocationPicker.propTypes = {
+  onSelect: PropTypes.func,
+  errors: PropTypes.any,
+  data: PropTypes.any,
+  disabled: PropTypes.bool,
+  dynamicReturn: PropTypes.bool
 };
 
 export default LocationPicker;

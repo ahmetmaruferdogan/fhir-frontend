@@ -8,6 +8,18 @@
     "city": "City",
     "state": "State"
   },
+  "appointment": {
+    "list": {
+      "title": "Appointment List",
+      "columns": {
+        "id": "Resource id",
+        "patient": "Patient",
+        "practitioner": "Practitioner",
+        "date": "Appointment date",
+        "duration": "Appointment duration"
+      }
+    }
+  },
   "patient": {
     "list": {
       "title": "Patient List",

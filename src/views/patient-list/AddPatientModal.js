@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button, MenuItem, Modal, TextField, Typography } from '@mui/material';
 import { Box } from '@mui/system';
 import PropTypes from 'prop-types';
@@ -8,7 +8,10 @@ import { updatePatient, createPatient, checkCznValid, setUndefinedCznValid } fro
 import { parseCzn } from 'utils/patients-utils';
 import { useTranslation } from 'react-i18next';
 import LocationPicker from './LocationPicker';
-const referenceDate = new Date('1900-01-01');
+const maxAge = 125;
+const referenceDate = new Date();
+referenceDate.setFullYear(Number(referenceDate.getFullYear() - maxAge));
+console.log('reference date: ', referenceDate);
 const styles = {
   modal: {
     display: 'flex',
@@ -35,12 +38,6 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const dispatch = useDispatch();
   const { cznValid } = useSelector((state) => state.patients);
   const [t, i18n] = useTranslation('global');
-  AddPatientModal.propTypes = {
-    open: PropTypes.bool,
-    onClose: PropTypes.func,
-    patient: PropTypes.any,
-    genders: PropTypes.any
-  };
   useEffect(() => {
     setFormData(parsePatientDataToFormData(patient, initialFormData));
     checkCzn(patient?.resource?.id || undefined, parseCzn(patient?.resource));
@@ -159,7 +156,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     ];
     return finalRequestBody;
   };
-  const citizenNumberFieldRef = useRef();
+  // const citizenNumberFieldRef = useRef();
   const birthdateIsValid = (date) => {
     const parsedDate = new Date(date);
     return Boolean(parsedDate > referenceDate);
@@ -237,7 +234,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           display: 'flex',
           flexDirection: 'column',
           '& > .MuiTextField-root': {
-            maxHeight: '40px'
+            maxHeight: '60px'
           }
         }}
       >
@@ -248,7 +245,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
           name="citizenNumber"
           label={t('patient.list.columns.czn')}
           variant="standard"
-          ref={citizenNumberFieldRef}
+          // ref={citizenNumberFieldRef}
           style={styles.textField}
           value={formData.citizenNumber}
           onChange={(event) => {
@@ -260,12 +257,12 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
               ...formErrors,
               citizenNumber: ''
             });
-            if (event.target.value.match(/^[1-9]{1}[0-9]{9}[02468]{1}$/) || cznValid === undefined) {
-              dispatch(checkCznValid({ id: formData?.id || '', czn: event.target.value }));
-            }
+            // if (event.target.value.match(/^[1-9]{1}[0-9]{9}[02468]{1}$/) || cznValid === undefined) {
+            //   dispatch(checkCznValid({ id: formData?.id || '', czn: event.target.value }));
+            // }
           }}
-          error={cznValid === false || Boolean(formErrors.citizenNumber)}
-          helperText={cznValid === false ? 'Citizen number already exist!' : formErrors.citizenNumber}
+          error={Boolean(formErrors.citizenNumber)}
+          helperText={formErrors.citizenNumber}
         ></TextField>
         <TextField
           name="given"
@@ -398,6 +395,13 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
       </Box>
     </Modal>
   );
+};
+
+AddPatientModal.propTypes = {
+  open: PropTypes.bool,
+  onClose: PropTypes.func,
+  patient: PropTypes.any,
+  genders: PropTypes.any
 };
 
 export default AddPatientModal;

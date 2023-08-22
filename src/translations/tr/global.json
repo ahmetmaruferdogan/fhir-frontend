@@ -8,6 +8,18 @@
     "city": "Şehir",
     "state": "Eyalet"
   },
+  "appointment": {
+    "list": {
+      "title": "Randevu listesi",
+      "columns": {
+        "id": "Kaynak no",
+        "patient": "Hasta",
+        "practitioner": "Uzman",
+        "date": "Randevu günü",
+        "duration": "Randevu süresi"
+      }
+    }
+  },
   "patient": {
     "list": {
       "title": "Hasta Listesi",

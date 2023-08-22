@@ -1,6 +1,6 @@
 import { fetchPatients, deletePatientWithId, fetchGenders } from '../../store/patientSlicer';
 import { React, useCallback, useEffect, useMemo, useState } from 'react';
-import { parseCzn, parseName, prevPageExists, nextPageExists, objectifyString } from '../../utils/patients-utils';
+import { parseCzn, parseName, objectifyString } from '../../utils/patients-utils';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
@@ -99,6 +99,22 @@ const PatientList = () => {
   const handleCloseAddPatientModal = () => {
     setIsModalOpen(false);
     setEditedPatient(undefined);
+  };
+
+  const nextPageExists = (oldBundle) => {
+    if (!oldBundle || !oldBundle.link) {
+      return false;
+    }
+    const nextLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^next$/));
+    return nextLinkObject ? true : false;
+  };
+
+  const prevPageExists = (oldBundle) => {
+    if (!oldBundle || !oldBundle.link) {
+      return false;
+    }
+    const prevLinkObject = oldBundle?.link?.find((link) => link?.relation?.match(/^prev(ious)?$/));
+    return prevLinkObject ? true : false;
   };
 
   const fetchPrevPage = (oldBundle) => {
@@ -352,7 +368,6 @@ const PatientList = () => {
                 // ) :
                 <TableCell
                   key={column.id}
-                  align={column.align}
                   sx={{
                     textAlign: 'center'
                   }}

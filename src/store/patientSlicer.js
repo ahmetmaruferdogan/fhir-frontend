@@ -4,7 +4,7 @@ import { extractGetpagesoffsetValue } from '../utils/patients-utils';
 
 import { toast } from 'react-toastify';
 
-export const resourceType = 'Patient';
+export const patientResourceType = 'Patient';
 
 export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (params0) => {
   var searchType = params0?.searchType;
@@ -48,7 +48,7 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
       return oldBundle;
     }
     const params1 = {
-      resourceType,
+      resourceType: patientResourceType,
       searchParams: {
         ...searchParams,
         _total: 'accurate'
@@ -62,7 +62,7 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
     newBundle = await api.search(params1);
   } else {
     const params1 = {
-      resourceType,
+      resourceType: patientResourceType,
       searchParams: {
         ...searchParams,
         _total: 'accurate'
@@ -81,9 +81,9 @@ export const fetchPatients = createAsyncThunk('patients/fetchPatients', async (p
 
 export const updatePatient = createAsyncThunk('patients/updatePatient', async (params0) => {
   const finalRequestBody = {
-    resourceType,
+    resourceType: patientResourceType,
     id: params0.id,
-    body: { resourceType, id: params0.id, ...params0 }
+    body: { resourceType: patientResourceType, id: params0.id, ...params0 }
   };
   api
     .update(finalRequestBody)
@@ -97,8 +97,8 @@ export const updatePatient = createAsyncThunk('patients/updatePatient', async (p
 
 export const createPatient = createAsyncThunk('patients/createPatient', async (params0) => {
   const finalRequestBody = {
-    resourceType,
-    body: { resourceType, ...params0 }
+    resourceType: patientResourceType,
+    body: { resourceType: patientResourceType, ...params0 }
   };
   await api.create(finalRequestBody);
 });
@@ -133,7 +133,7 @@ export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithI
     return;
   }
   const finalRequestBody = {
-    resourceType,
+    resourceType: patientResourceType,
     id
   };
   await api
@@ -150,7 +150,7 @@ export const checkCznValid = createAsyncThunk('patients/checkCznExist', async ({
   if (!czn) return undefined;
   const result = api
     .search({
-      resourceType,
+      resourceType: patientResourceType,
       searchParams: {
         identifier: czn,
         _total: 'accurate'
