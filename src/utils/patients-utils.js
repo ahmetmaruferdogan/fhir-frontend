@@ -8,15 +8,15 @@ export const extractGetpagesoffsetValue = (url) => {
 };
 
 export const parseCzn = (patient) => {
-  return (
+  const returnVal =
     patient?.identifier?.filter((element) =>
       element?.type?.coding?.filter(
         (element1) => element1?.code === 'CZ' && element1.system === 'http://terminology.hl7.org/CodeSystem/v2-0203'
       )[0]
         ? true
         : false
-    )[0]?.value || ''
-  );
+    )[0]?.value || '';
+  return returnVal;
 };
 
 export const parseName = (patient) => {

@@ -1,5 +1,6 @@
 {
   "general": {
+    "select": "Seç",
     "search": "Arama",
     "save": "Kaydet",
     "cancel": "İptal",
@@ -14,9 +15,24 @@
       "columns": {
         "id": "Kaynak no",
         "patient": "Hasta",
-        "practitioner": "Uzman",
+        "practitioners": "Uzmanlar",
         "date": "Randevu günü",
-        "duration": "Randevu süresi"
+        "duration": "Randevu süresi (dakika)",
+        "status": "Durum",
+        "hour": "Randevu Saati"
+      }
+    },
+    "menu": {
+      "title": "Randevu Menüsü"
+    },
+    "addModal": {
+      "title": {
+        "update": "Randevu Güncelle",
+        "create": "Randevu Ekle"
+      },
+      "select": {
+        "patient": "Hasta Seç",
+        "practitioners": "Uzman Seç"
       }
     }
   },
@@ -24,6 +40,7 @@
     "list": {
       "title": "Hasta Listesi",
       "columns": {
+        "select": "",
         "czn": "TC kimlik no",
         "id": "Kaynak no",
         "firstName": "Ad",

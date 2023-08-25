@@ -148,6 +148,11 @@ export const deletePatientWithId = createAsyncThunk('patients/deletePatientWithI
 
 export const checkCznValid = createAsyncThunk('patients/checkCznExist', async ({ id, czn }) => {
   if (!czn) return undefined;
+  console.log('checkCznExist called czn value: ', czn);
+  console.log('id value: ', id);
+  if (!id) {
+    console.log('no id');
+  }
   const result = api
     .search({
       resourceType: patientResourceType,
@@ -157,6 +162,7 @@ export const checkCznValid = createAsyncThunk('patients/checkCznExist', async ({
       }
     })
     .then((response) => {
+      console.log('response', response);
       if (response?.total < 1) {
         return true;
       } else if (id && response?.total === 1) {

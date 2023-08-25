@@ -1,5 +1,6 @@
 {
   "general": {
+    "select": "Select",
     "search": "Search",
     "save": "Save",
     "cancel": "Cancel",
@@ -14,9 +15,24 @@
       "columns": {
         "id": "Resource id",
         "patient": "Patient",
-        "practitioner": "Practitioner",
+        "practitioners": "Practitioners",
         "date": "Appointment date",
-        "duration": "Appointment duration"
+        "duration": "Appointment duration (minutes)",
+        "status": "Status",
+        "hour": "Appointment Hour"
+      }
+    },
+    "menu": {
+      "title": "Appointment Menu"
+    },
+    "addModal": {
+      "title": {
+        "update": "Update Appointment",
+        "create": "Create Appointment"
+      },
+      "select": {
+        "patient": "Select Patient",
+        "practitioners": "Select Practitioners"
       }
     }
   },
@@ -24,6 +40,7 @@
     "list": {
       "title": "Patient List",
       "columns": {
+        "select": "",
         "czn": "Citizen Number",
         "id": "Resource id",
         "firstName": "First name",

@@ -9,20 +9,20 @@ import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
 import Paper from '@mui/material/Paper';
-import DeleteIcon from '@mui/icons-material/Delete';
 import { Box, Button, Grid, IconButton, MenuItem, Stack, TablePagination, debounce } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
 import { useDispatch, useSelector } from 'react-redux';
 import AddPatientModal from './AddPatientModal';
 import { toast } from 'react-toastify';
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle } from '@mui/material';
-// import SkeletonPatientList from './skeleton/SkeletonPatientList';
-import EditIcon from '@mui/icons-material/Edit';
-// import RefreshIcon from '@mui/icons-material/Refresh';
-import SearchIcon from '@mui/icons-material/Search';
 import { useTranslation } from 'react-i18next';
-import FilterAltIcon from '@mui/icons-material/FilterAlt';
+// import SkeletonPatientList from './skeleton/SkeletonPatientList';
+// import RefreshIcon from '@mui/icons-material/Refresh';
 import LocationPicker from './LocationPicker';
+import DeleteIcon from '@mui/icons-material/Delete';
+import AddIcon from '@mui/icons-material/Add';
+import EditIcon from '@mui/icons-material/Edit';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterAltIcon from '@mui/icons-material/FilterAlt';
 
 const debounceDelay = 1000;
 

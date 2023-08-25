@@ -20,7 +20,14 @@ const MenuList = () => {
         title: t('patient.list.title'),
         type: 'item',
         url: '/patient/patients'
-      },
+      }
+    ]
+  };
+  const appointmentTabs = {
+    id: 'appointmentMenu',
+    title: t('appointment.menu.title'),
+    type: 'group',
+    children: [
       {
         id: 'appointmentList',
         title: t('appointment.list.title'),
@@ -31,7 +38,7 @@ const MenuList = () => {
   };
 
   const menuItems = {
-    items: [patientTabs]
+    items: [patientTabs, appointmentTabs]
   };
 
   const navItems = menuItems.items.map((item) => {

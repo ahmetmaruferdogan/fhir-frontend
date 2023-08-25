@@ -8,10 +8,12 @@ import { updatePatient, createPatient, checkCznValid, setUndefinedCznValid } fro
 import { parseCzn } from 'utils/patients-utils';
 import { useTranslation } from 'react-i18next';
 import LocationPicker from './LocationPicker';
+
 const maxAge = 125;
 const referenceDate = new Date();
 referenceDate.setFullYear(Number(referenceDate.getFullYear() - maxAge));
-console.log('reference date: ', referenceDate);
+// console.log('reference date: ', referenceDate);
+
 const styles = {
   modal: {
     display: 'flex',
@@ -36,35 +38,10 @@ const styles = {
 
 const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const dispatch = useDispatch();
-  const { cznValid } = useSelector((state) => state.patients);
+  const { cznValid, bundle } = useSelector((state) => state.patients);
   const [t, i18n] = useTranslation('global');
-  useEffect(() => {
-    setFormData(parsePatientDataToFormData(patient, initialFormData));
-    checkCzn(patient?.resource?.id || undefined, parseCzn(patient?.resource));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [patient]);
-  // console.log('genders', genders);
-  const patientSchema = yup.object().shape({
-    given: yup.string().required(t('patient.addModal.errors.validations.required')),
-    family: yup.string().required(t('patient.addModal.errors.validations.required')),
-    gender: yup
-      .string()
-      .required('Gender is required')
-      .oneOf(genders?.concept?.map((gender) => gender.code) || [], t('patient.addModal.errors.validations.required')),
-    birthDate: yup
-      .string()
-      .required(t('patient.addModal.errors.validations.required'))
-      .matches(/^\d{4}-\d{2}-\d{2}$/, t('patient.addModal.errors.validations.birthdateFormat')),
-    telecom: yup.string().required(t('patient.addModal.errors.validations.required')),
-    citizenNumber: yup
-      .string()
-      .required(t('patient.addModal.errors.validations.required'))
-      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, t('patient.addModal.errors.validations.notValid')),
-    country: yup.string().required(t('patient.addModal.errors.validations.required')),
-    state: yup.string().required(t('patient.addModal.errors.validations.required')),
-    city: yup.string().required(t('patient.addModal.errors.validations.required'))
-    // ppn: yup.string().required('Passport number is required').matches("^[A-Z][0-9]{8}$")
-  });
+  const [usedCzn, setUsedCzn] = useState(undefined);
+  const [lastCheckedCzn, setLastCheckedCzn] = useState('');
 
   const initialFormData = {
     given: '',
@@ -78,7 +55,6 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     city: '',
     id: undefined
   };
-
   const parsePatientDataToFormData = (patientData, initialFormData) => {
     var result = { ...initialFormData };
     result.id = patientData?.resource?.id || undefined;
@@ -110,10 +86,85 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   const [formData, setFormData] = useState(parsePatientDataToFormData(patient, initialFormData));
   const [formErrors, setFormErrors] = useState({ ...initialFormData });
 
+  const parseUsedCzns = () => {
+    var entries = bundle?.entry || undefined;
+    if (entries) {
+      let czns = [];
+      entries.map((entry) => {
+        const czn1 = parseCzn(entry?.resource);
+        if (czn1 && entry?.resource?.id !== patient?.resource?.id) {
+          czns.push(czn1);
+        }
+      });
+      return czns;
+    }
+    return [];
+  };
+
+  useEffect(() => {
+    var newCzns = parseUsedCzns();
+    if (newCzns.length <= 0) {
+      return;
+    } else if (!usedCzn) {
+      setUsedCzn(newCzns);
+      return;
+    } else {
+      newCzns.map((czn) => {
+        if (!usedCzn?.includes(czn)) {
+          usedCzn.push(czn);
+        }
+      });
+    }
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bundle]);
+
+  useEffect(() => {
+    console.log('usedCzn', usedCzn);
+    if (cznValid === false && !usedCzn.includes(lastCheckedCzn)) {
+      usedCzn.push(lastCheckedCzn);
+      checkCzn(patient?.resource?.id, lastCheckedCzn);
+    }
+    console.log('usedCzn', usedCzn);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cznValid]);
+
+  useEffect(() => {
+    setFormData(parsePatientDataToFormData(patient, initialFormData));
+    if (!usedCzn) {
+      setUsedCzn(parseUsedCzns());
+    }
+    // checkCzn(patient?.resource?.id || undefined, parseCzn(patient?.resource));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [patient]);
+  // console.log('genders', genders);
+  const patientSchema = yup.object().shape({
+    given: yup.string().required(t('patient.addModal.errors.validations.required')),
+    family: yup.string().required(t('patient.addModal.errors.validations.required')),
+    gender: yup
+      .string()
+      .required('Gender is required')
+      .oneOf(genders?.concept?.map((gender) => gender.code) || [], t('patient.addModal.errors.validations.required')),
+    birthDate: yup
+      .string()
+      .required(t('patient.addModal.errors.validations.required'))
+      .matches(/^\d{4}-\d{2}-\d{2}$/, t('patient.addModal.errors.validations.birthdateFormat')),
+    telecom: yup.string().required(t('patient.addModal.errors.validations.required')),
+    citizenNumber: yup
+      .string()
+      .required(t('patient.addModal.errors.validations.required'))
+      .matches(/^[1-9]{1}[0-9]{9}[02468]{1}$/, t('patient.addModal.errors.validations.notValid')),
+    country: yup.string().required(t('patient.addModal.errors.validations.required')),
+    state: yup.string().required(t('patient.addModal.errors.validations.required')),
+    city: yup.string().required(t('patient.addModal.errors.validations.required'))
+    // ppn: yup.string().required('Passport number is required').matches("^[A-Z][0-9]{8}$")
+  });
+
   const handleClose = () => {
     setFormData({});
     setFormErrors({});
     dispatch(setUndefinedCznValid());
+    setLastCheckedCzn('');
     onClose();
   };
 
@@ -161,11 +212,12 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
     const parsedDate = new Date(date);
     return Boolean(parsedDate > referenceDate);
   };
-  const handleSave = () => {
+  const handleSave = async () => {
     patientSchema
       .validate(formData, { abortEarly: false })
       .then(() => {
-        if (!cznValid) {
+        console.log('usedCzn', usedCzn);
+        if (usedCzn.includes(formData.citizenNumber)) {
           setFormErrors({ ...formErrors, citizenNumber: t('patient.addModal.errors.validations.alreadyExist') });
           return;
         }
@@ -208,16 +260,34 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   };
 
   const checkCzn = (id, czn) => {
-    if (!id || !czn) {
-      if (cznValid === undefined) {
-        dispatch(checkCznValid({ id: formData?.id || '', czn: formData.citizenNumber }));
-        return;
-      }
+    console.log('checkCzn called. cznValid: ', cznValid);
+    if (!czn) {
       return;
     }
-    if (cznValid === undefined) {
-      dispatch(checkCznValid({ id, czn }));
+
+    if (!czn.match(/^[1-9]{1}[0-9]{9}[02468]{1}$/)) {
+      console.log('not valid input');
+      setFormErrors({ ...formErrors, citizenNumber: t('patient.addModal.errors.validations.notValid') });
+      return;
     }
+
+    if (czn === parseCzn(patient?.resource)) {
+      console.log('same czn');
+      return;
+    }
+
+    if (usedCzn && usedCzn.includes(czn)) {
+      console.log('it exist in usedCzn');
+      setFormErrors({ ...formErrors, citizenNumber: t('patient.addModal.errors.validations.alreadyExist') });
+      return;
+    }
+
+    if (!id) {
+      id = '';
+    }
+
+    dispatch(checkCznValid({ id, czn }));
+    setLastCheckedCzn(czn);
   };
 
   const handleAddressSelect = (addressParams) => {
@@ -227,7 +297,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
   };
 
   return (
-    <Modal open={open} onClose={() => handleClose()} style={styles.modal}>
+    <Modal open={open} onClose={handleClose} style={styles.modal}>
       <Box
         style={styles.modalContent}
         sx={{
@@ -257,6 +327,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
               ...formErrors,
               citizenNumber: ''
             });
+            checkCzn(patient?.resource?.id || '', event.target.value);
             // if (event.target.value.match(/^[1-9]{1}[0-9]{9}[02468]{1}$/) || cznValid === undefined) {
             //   dispatch(checkCznValid({ id: formData?.id || '', czn: event.target.value }));
             // }
@@ -384,7 +455,7 @@ const AddPatientModal = ({ open, onClose, patient, genders }) => {
             {t('general.cancel')}
           </Button>
           <Button
-            disabled={patient?.resource?.id ? cznValid === undefined : false}
+            disabled={patient?.resource?.id ? false : cznValid === undefined}
             variant="contained"
             color="primary"
             onClick={handleSave}

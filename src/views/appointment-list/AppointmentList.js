@@ -1,5 +1,7 @@
+import AddIcon from '@mui/icons-material/Add';
 import {
   Box,
+  IconButton,
   Paper,
   Stack,
   Table,
@@ -16,11 +18,13 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch, useSelector } from 'react-redux';
 import { toast } from 'react-toastify';
 import { fetchAppointments } from 'store/appointmentSlicer';
+import AddAppointmentModal from './AddAppointmentModal';
 
 const AppointmentList = () => {
   const dispatch = useDispatch();
   const [t, i18n] = useTranslation('global');
   const { bundle, loading } = useSelector((state) => state.appointments);
+  const [addAppointmentModalOpen, setAddAppointmentModalOpen] = useState(false);
   useEffect(() => {
     executeSearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -44,7 +48,11 @@ const AppointmentList = () => {
 
   const handleSearchKeyDown = (event) => {
     if (event.key === 'Enter') {
-      //
+      executeSearch({
+        searchParams: {
+          _id: mainSearchText
+        }
+      });
     }
   };
 
@@ -106,26 +114,47 @@ const AppointmentList = () => {
     setCurrentPage(newPage);
   };
 
-  const columns = [
-    {
-      id: 'id'
-    },
-    {
-      id: 'patient'
-    },
-    {
-      id: 'practitioner'
-    },
-    {
-      id: 'date'
-    },
-    {
-      id: 'duration'
+  const columns = [{ id: 'id' }, { id: 'patient' }, { id: 'practitioners' }, { id: 'date' }, { id: 'duration' }, { id: 'status' }];
+
+  const handleAddAppointmentModalClose = () => {
+    setAddAppointmentModalOpen(false);
+  };
+
+  const handleAddAppointmentModalOpen = () => {
+    setAddAppointmentModalOpen(true);
+  };
+
+  const parsePatient = (appointment) => {
+    var patient = appointment?.participant?.filter((person) => person?.actor?.type?.toLowerCase().includes('patient'.toLowerCase()))[0];
+    if (!patient) return '';
+    return patient?.actor?.display ? patient?.actor?.display : patient?.actor?.id ? patient?.actor?.id : patient?.actor?.identifier;
+  };
+  const parsePractitioners = (appointment) => {
+    var practitioner = appointment?.participant?.filter((person) =>
+      person?.actor?.type?.toLowerCase().includes('practitioner'.toLowerCase())
+    )[0];
+    if (!practitioner) return '';
+    return practitioner?.actor?.display
+      ? practitioner?.actor?.display
+      : practitioner?.actor?.id
+      ? practitioner?.actor?.id
+      : practitioner?.actor?.identifier;
+  };
+  const parseAppointmentDate = (appointment) => {
+    if (appointment?.end && appointment?.minutesDuration) {
+      const dateObject = new Date(appointment.end);
+      dateObject.setMinutes(dateObject.getMinutes() - appointment?.minutesDuration);
+      return dateObject.toISOString().slice(0, 19).replace('T', '/');
     }
-  ];
+    return '';
+  };
+  const parseAppointmentDuration = (appointment) => {
+    return appointment?.minutesDuration || '';
+  };
 
   return (
     <div>
+      <AddAppointmentModal open={addAppointmentModalOpen} onClose={handleAddAppointmentModalClose}></AddAppointmentModal>
       <Stack direction="column">
         <Box
           sx={{
@@ -144,6 +173,9 @@ const AppointmentList = () => {
             value={mainSearchText}
             sx={{ width: 200 }}
           ></TextField>
+          <IconButton key="add-patient-button" onClick={handleAddAppointmentModalOpen} sx={{ marginLeft: 'auto' }}>
+            <AddIcon fontSize="small" />
+          </IconButton>
         </Box>
       </Stack>
       <TableContainer component={Paper}>
@@ -178,35 +210,25 @@ const AppointmentList = () => {
             <TableBody></TableBody>
           ) : (
             <TableBody>
-              {bundle?.entry?.map((appointment) => {
-                if (
-                  appointment?.participant?.filter(
-                    (participant) =>
-                      participant?.actor?.type.toLowerCase() === 'Hl7.Fhir.Model.Patient'.toLowerCase() ||
-                      participant?.actor?.type.toLowerCase() === 'Patient'.toLowerCase()
-                  )[0]
-                ) {
-                  console.log('appointment', appointment);
-                }
-                return (
-                  <TableRow
-                    key={appointment?.reource?.id}
-                    sx={{
-                      height: '10px',
-                      '& > td': {
-                        padding: '1px',
-                        textAlign: 'center'
-                      }
-                    }}
-                  >
-                    <TableCell>{appointment?.resource?.id || '-'}</TableCell>
-                    <TableCell>place holder</TableCell>
-                    <TableCell>place1 holder</TableCell>
-                    <TableCell>place2 holder</TableCell>
-                    <TableCell>place3 holder</TableCell>
-                  </TableRow>
-                );
-              })}
+              {bundle?.entry?.map((appointment) => (
+                <TableRow
+                  key={appointment?.reource?.id}
+                  sx={{
+                    height: '10px',
+                    '& > td': {
+                      padding: '1px',
+                      textAlign: 'center'
+                    }
+                  }}
+                >
+                  <TableCell>{appointment?.resource?.id || '-'}</TableCell>
+                  <TableCell>{parsePatient(appointment?.resource) || '-'}</TableCell>
+                  <TableCell>{parsePractitioners(appointment?.resource) || '-'}</TableCell>
+                  <TableCell>{parseAppointmentDate(appointment?.resource) || '-'}</TableCell>
+                  <TableCell>{parseAppointmentDuration(appointment?.resource) || '-'}</TableCell>
+                  <TableCell>{appointment?.resource?.status || '-'}</TableCell>
+                </TableRow>
+              ))}
             </TableBody>
           )}
         </Table>
